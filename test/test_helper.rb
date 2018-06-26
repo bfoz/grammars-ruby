@@ -1,5 +1,7 @@
 require "bundler/setup"
-require 'grammars'
+
+require 'grammar'
+require 'parsers/recursive_descent'
 
 RSpec.configure do |config|
     # Enable flags like --only-failures and --next-failure
