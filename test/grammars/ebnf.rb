@@ -20,6 +20,7 @@ RSpec.describe 'EBNF' do
 		    # The second element is the Repetition. The Repetition's element is an Alternation.
 		    []
 		),
+		[],
 		' ;',
 	    )
 	])
@@ -41,7 +42,6 @@ RSpec.describe 'EBNF' do
 
 		    # The second element is the Repetition. The Repetition's element is an Alternation.
 		    [Grammars::EBNF::RHS.grammar[1].grammar.new(
-			Grammars::EBNF::RHS.grammar[1].grammar[1].new(
 			    ' , ',				# The separator
 			    Grammars::EBNF::RHS.grammar.new(	# The recursion, which is a Concatenation...
 				Grammars::EBNF::RHS.grammar[0].new(	# The first element is an Alternation...
@@ -51,7 +51,6 @@ RSpec.describe 'EBNF' do
 				),
 				# The second element is a Concatenation
 				[Grammars::EBNF::RHS.grammar[1].grammar.new(
-				    Grammars::EBNF::RHS.grammar[1].grammar[1].new(
 					' , ',
 					Grammars::EBNF::RHS.grammar.new(	# The recursion, which is a Concatenation...
 					    Grammars::EBNF::RHS.grammar[0].new(	# The first element is an Alternation...
@@ -60,7 +59,6 @@ RSpec.describe 'EBNF' do
 								)
 					    ),
 					    [Grammars::EBNF::RHS.grammar[1].grammar.new(
-						Grammars::EBNF::RHS.grammar[1].grammar[1].new(
 						    ' , ',
 						    Grammars::EBNF::RHS.grammar.new(	# The recursion, which is a Concatenation...
 							Grammars::EBNF::RHS.grammar[0].new(	# The first element is an Alternation...
@@ -70,15 +68,13 @@ RSpec.describe 'EBNF' do
 							),
 							[]
 						    )
-						)
 					    )]
 					)
-				    )
 				)]
 			    )
-			)
 		    )]
-		),
+	        ),
+	   	[],
 		' ;',
 	    )
 	])

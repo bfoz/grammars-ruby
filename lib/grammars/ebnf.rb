@@ -33,12 +33,11 @@ module Grammars
 	    element concatenation('[', RHS, ']')		# Optional-repeat group
 	    element concatenation('{', RHS, '}')		# Any-repeat group
 	    element concatenation('(', RHS, ')')		# Group
-	    element concatenation(RHS, /\s*\|\s*/, RHS)
 	    element concatenation(RHS, /\s*,\s*/, RHS)
 	end
 
 	#rule = lhs , "=" , rhs , ";" ;
-	Rule = concatenation(LHS, /\s*=\s*/, RHS, /\s*;/)
+	Rule = concatenation(LHS, /\s*=\s*/, RHS, concatenation(/\s*\|\s*/, RHS).any, /\s*;/)
 
 	#grammar = { rule } ;
 	Grammar = Rule.any
