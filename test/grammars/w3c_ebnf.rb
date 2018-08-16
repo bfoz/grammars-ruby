@@ -9,7 +9,7 @@ RSpec.describe Grammars::W3C_EBNF do
     end
 
     it 'must parse an Expression with a single Identifier' do
-	parser.push Grammars::W3C_EBNF::Expression
+	parser.push Grammars::W3C_EBNF::RHS::Expression
 	expect(parser.parse('identifier0')).to eql(['identifier0'])
     end
 
@@ -50,7 +50,7 @@ RSpec.describe Grammars::W3C_EBNF do
 			' ::= ',
 			Grammars::W3C_EBNF::RHS.new(
 				Grammars::W3C_EBNF::RHS::List.new(
-					Grammars::W3C_EBNF::Expression.new('rule', []),
+					Grammars::W3C_EBNF::RHS::Expression.new('rule', []),
 					[]
 				),
 				[]
@@ -67,13 +67,13 @@ RSpec.describe Grammars::W3C_EBNF do
 			' ::= ',
 			Grammars::W3C_EBNF::RHS.new(
 				Grammars::W3C_EBNF::RHS::List.new(
-					Grammars::W3C_EBNF::Expression.new('identifier0', []),
+					Grammars::W3C_EBNF::RHS::Expression.new('identifier0', []),
 					[]
 				),
 				[Grammars::W3C_EBNF::RHS[1].grammar.new(
 					' | ',
 					Grammars::W3C_EBNF::RHS::List.new(
-						Grammars::W3C_EBNF::Expression.new('identifier1', []),
+						Grammars::W3C_EBNF::RHS::Expression.new('identifier1', []),
 						[]
 					)
 				)]
@@ -90,8 +90,8 @@ RSpec.describe Grammars::W3C_EBNF do
 			' ::= ',
 			Grammars::W3C_EBNF::RHS.new(
 				Grammars::W3C_EBNF::RHS::List.new(
-					Grammars::W3C_EBNF::Expression.new('identifier0', []),
-					[Grammars::W3C_EBNF::RHS::List[1].grammar.new(' ', Grammars::W3C_EBNF::Expression.new('identifier1', []))]
+					Grammars::W3C_EBNF::RHS::Expression.new('identifier0', []),
+					[Grammars::W3C_EBNF::RHS::List[1].grammar.new(' ', Grammars::W3C_EBNF::RHS::Expression.new('identifier1', []))]
 				),
 				[]
 			),
@@ -107,14 +107,14 @@ RSpec.describe Grammars::W3C_EBNF do
 			' ::= ',
 			Grammars::W3C_EBNF::RHS.new(
 				Grammars::W3C_EBNF::RHS::List.new(
-					Grammars::W3C_EBNF::Expression.new('identifier0', []),
-					[Grammars::W3C_EBNF::RHS::List[1].grammar.new(' ', Grammars::W3C_EBNF::Expression.new('identifier1', []))]
+					Grammars::W3C_EBNF::RHS::Expression.new('identifier0', []),
+					[Grammars::W3C_EBNF::RHS::List[1].grammar.new(' ', Grammars::W3C_EBNF::RHS::Expression.new('identifier1', []))]
 				),
 				[Grammars::W3C_EBNF::RHS[1].grammar.new(
 					' | ',
 					Grammars::W3C_EBNF::RHS::List.new(
-						Grammars::W3C_EBNF::Expression.new('identifier2', []),
-						[Grammars::W3C_EBNF::RHS::List[1].grammar.new(' ', Grammars::W3C_EBNF::Expression.new('identifier3', []))]
+						Grammars::W3C_EBNF::RHS::Expression.new('identifier2', []),
+						[Grammars::W3C_EBNF::RHS::List[1].grammar.new(' ', Grammars::W3C_EBNF::RHS::Expression.new('identifier3', []))]
 					)
 				)]
 			),
@@ -130,16 +130,16 @@ RSpec.describe Grammars::W3C_EBNF do
 			' ::= ',
 			Grammars::W3C_EBNF::RHS.new(
 				Grammars::W3C_EBNF::RHS::List.new(
-					Grammars::W3C_EBNF::Expression.new('rule', []),
+					Grammars::W3C_EBNF::RHS::Expression.new('rule', []),
 					[]
 				),
 				[Grammars::W3C_EBNF::RHS[1].grammar.new(
 					' | ',
 					Grammars::W3C_EBNF::RHS::List.new(
-						Grammars::W3C_EBNF::Expression.new('rule', []),
+						Grammars::W3C_EBNF::RHS::Expression.new('rule', []),
 						[Grammars::W3C_EBNF::RHS::List[1].grammar.new(
 							' ',
-							Grammars::W3C_EBNF::Expression.new('syntax', []),
+							Grammars::W3C_EBNF::RHS::Expression.new('syntax', []),
 						)]
 					),
 				)]
