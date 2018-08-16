@@ -1,3 +1,5 @@
+require 'grammar/dsl'
+
 module Grammars
     # https://en.wikipedia.org/wiki/Extended_Backus-Naur_form
     module EBNF
@@ -23,21 +25,23 @@ module Grammars
 	# terminal = "'" , character , { character } , "'" | '"' , character , { character } , '"' ;
 	Terminal = alternation(concatenation("'", Character0.at_least(1), "'"), concatenation('"', Character1.at_least(1), '"'))
 
-	# lhs = identifier ;
-	LHS = Identifier
-
 	# rhs = identifier | terminal | "[" , rhs , "]" | "{" , rhs , "}" | "(" , rhs , ")" | rhs , "|" , rhs | rhs , "," , rhs ;
-	alternation :RHS do
-	    element Identifier
-	    element Terminal
-	    element concatenation('[', RHS, ']')		# Optional-repeat group
-	    element concatenation('{', RHS, '}')		# Any-repeat group
-	    element concatenation('(', RHS, ')')		# Group
-	    element concatenation(RHS, /\s*,\s*/, RHS)
+	concatenation :RHS do
+	    alternation :Expression do
+		element Identifier
+		element Terminal
+		element concatenation('[', RHS, ']')		# Optional-repeat group
+		element concatenation('{', RHS, '}')		# Any-repeat group
+		element concatenation('(', RHS, ')')		# Group
+	    end
+
+	    element List: concatenation(Expression, concatenation(/\s*,\s*/, Expression).any)
+	    element concatenation(/\s*\|\s*/, List).any
 	end
 
 	#rule = lhs , "=" , rhs , ";" ;
-	Rule = concatenation(LHS, /\s*=\s*/, RHS, concatenation(/\s*\|\s*/, RHS).any, /\s*;/)
+	# lhs = identifier ;
+	Rule = concatenation(Identifier, /\s*=\s*/, RHS, /\s*;(\s*\n)*/)
 
 	#grammar = { rule } ;
 	Grammar = Rule.any
