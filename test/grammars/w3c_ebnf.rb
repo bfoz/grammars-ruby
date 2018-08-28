@@ -37,6 +37,75 @@ RSpec.describe Grammars::W3C_EBNF do
 		)])
     end
 
+    context 'Grammars::W3C_EBNF::RHS::Expression' do
+	before :each do
+	    parser.push Grammars::W3C_EBNF::RHS::Expression
+	end
+
+	it 'must parse an excluded repetition' do
+	    expect(parser.parse("abc* - def")).to eq([
+		Grammars::W3C_EBNF::RHS::Expression.new(
+		    'abc',
+		    [
+			Grammars::W3C_EBNF::RHS::Expression[1].grammar[1].new('*'),
+			Grammars::W3C_EBNF::RHS::Expression[1].grammar[0].new(
+			    ' - ',
+			    Grammars::W3C_EBNF::RHS::Expression.new('def', [])
+			),
+		    ]
+		)
+	    ])
+	end
+
+	it 'must parse a repeated exclusion' do
+	    expect(parser.parse("abc - def*")).to eq([
+		Grammars::W3C_EBNF::RHS::Expression.new(
+		    'abc',
+		    [
+			Grammars::W3C_EBNF::RHS::Expression[1].grammar[0].new(
+			    ' - ',
+			    Grammars::W3C_EBNF::RHS::Expression.new(
+				'def',
+				[
+				    Grammars::W3C_EBNF::RHS::Expression[1].grammar[1].new('*')
+				]
+			    )
+			)
+		    ]
+		)
+	    ])
+	end
+    end
+
+    context 'Grammars::W3C_EBNF::RHS::List' do
+	before :each do
+	    parser.push Grammars::W3C_EBNF::RHS::List
+	end
+
+	it 'must parse a concatenation with a center exclusion' do
+	    expect(parser.parse("abc def - uvw xyz")).to eq([
+		Grammars::W3C_EBNF::RHS::List.new(
+		    Grammars::W3C_EBNF::RHS::Expression.new('abc', []),
+		    [
+			Grammars::W3C_EBNF::RHS::List[1].grammar.new(
+			    ' ',
+			    Grammars::W3C_EBNF::RHS::Expression.new('def', [
+				Grammars::W3C_EBNF::RHS::Expression[1].grammar[0].new(
+				    ' - ',
+				    Grammars::W3C_EBNF::RHS::Expression.new('uvw', []),
+				)
+			    ]),
+			),
+			Grammars::W3C_EBNF::RHS::List[1].grammar.new(
+			    ' ',
+			    Grammars::W3C_EBNF::RHS::Expression.new('xyz', []),
+			)
+		    ]
+		)
+	    ])
+	end
+    end
+
     context Grammars::W3C_EBNF::Rule do
 	before :each do
 	    parser.push Grammars::W3C_EBNF::Rule
