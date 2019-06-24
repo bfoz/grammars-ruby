@@ -1,12 +1,18 @@
 require 'grammar/dsl'
 
 module Grammars
+    # http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
     module C
 	using Grammar::DSL
 
 	storage_class_spec	= 'auto' | 'register' | 'static' | 'extern' | 'typedef'
 	struct_or_union	= 'struct' | 'union'
-	id	= "identifier_regex"
+
+	# A.1.3 Identifiers
+
+	#(6.4.2.1)
+	identifier	= /[^0-9][0-9_a-zA-Z]*/
+
 	type_qualifier	= 'const' | 'volatile'
 	spec_qualifier_list	= alternation do |spec_qualifier_list|
 		element concatenation(alternation(type_spec, type_qualifier).any, type_spec)
@@ -43,12 +49,68 @@ module Grammars
 		element concatenation(spec_qualifier_list, abstract_declarator)
 		element spec_qualifier_list
 	end
-	int_const	= "int_regex"
-	char_const	= "char_regex"
-	float_const	= "float_regex"
-	enumeration_const	= "enum_regex"
-	const	= alternation(int_const, char_const, float_const, enumeration_const)
-	string	= "string_regex"
+
+	# A.1.5 Constants
+
+	# (6.4.4.1)
+	decimal_constant	= /[1-9][0-9]*/
+	octal_constant	= /0[0-7]*/
+	hexadecimal_constant	= /0[xX][0-9A-Fa-f]+/
+	long_suffix	= /[lL]/
+	long_long_suffix	= /ll|LL/
+	unsigned_suffix	= /[uU]/
+	integer_suffix 	= alternation do
+		element concatenation(unsigned_suffix, long_suffix.optional)
+		element concatenation(unsigned_suffix, long_long_suffix)
+		element concatenation(long_suffix, unsigned_suffix.optional)
+		element concatenation(long_long_suffix, unsigned_suffix.optional)
+	end
+	integer_constant	= alternation do
+		element concatenation(decimal_constant, integer_suffix.optional)
+		element concatenation(octal_constant, integer_suffix.optional)
+		element concatenation(hexadecimal_constant, integer_suffix.optional)
+	end
+
+	# (6.4.4.2)
+	exponent_part	= /[eE][+-]?[0-9]+/
+	fractional_constant	= alternation(/[0-9]*\.[0-9]+/, /[0-9]+\./)
+	floating_suffix	= /[flFL]/
+	decimal_floating_constant	= alternation do
+		element concatenation(fractional_constant, exponent_part.optional, floating_suffix.optional)
+		element concatenation(/[0-9]+/, exponent_part, floating_suffix.optional)
+	end
+	binary_exponent_part	= /[pP][+-]?[0-9]+/
+	hexadecimal_fractional_constant	= alternation do
+		element concatenation(/[0-9a-fA-F]*/, '.', /[0-9a-fA-F]+/)
+		element concatenation(/[0-9a-fA-F]+/, '.')
+	end
+	hexadecimal_floating_constant 	= alternation do
+		element concatenation(/0[xX]/, hexadecimal_fractional_constant, binary_exponent_part, floating_suffix.optional)
+		element concatenation(/0[xX]/, /[0-9a-fA-F]+/, binary_exponent_part, floating_suffix.optional)
+	end
+	floating_constant	= alternation(decimal_floating_constant, hexadecimal_floating_constant)
+
+	# (6.4.4.3)
+	enumeration_constant	= identifier
+
+	# (6.4.4.4)
+	c_char = alternation(/[^,\\\n]/, "\\'", '\"', '\?', '\\', '\a', '\b', '\f', '\n', '\r', '\t', '\v', /\\[0-7]{1,3}/, /\\x[0-9a-fA-F]+/).at_least(1)
+	character_constant	= alternation do
+		element concatenation("'", c_char, "'")
+		element concatenation("L'", c_char, "'")
+		element concatenation("u'", c_char, "'")
+		element concatenation("U'", c_char, "'")
+	end
+
+	# (6.4.4)
+	constant 	= alternation(integer_constant, floating_constant, enumeration_constant, character_constant)
+
+	# A.1.6 String literals
+
+	# (6.4.5)
+	s_char = alternation(/[^,\\\n]/, "\\'", '\"', '\?', '\\', '\a', '\b', '\f', '\n', '\r', '\t', '\v', /\\[0-7]{1,3}/, /\\x[0-9a-fA-F]+/)
+	string_literal	= concatenation(/(u8|u|U|L)?/, '"', s_char.any, '"')
+
 	assignment_operator	= '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|='
 	assignment_exp	= concatenation do |assignment_exp|
 		element concatenation(unary_exp, assignment_operator).any
@@ -59,9 +121,9 @@ module Grammars
 		element concatenation(",", assignment_exp).any
 	end
 	primary_exp	= alternation do |primary_exp|
-		element id
-		element const
-		element string
+		element identifier
+		element constant
+		element string_literal
 		element concatenation("(", exp, ")")
 	end
 	argument_exp_list	= concatenation do |argument_exp_list|
@@ -70,7 +132,7 @@ module Grammars
 	end
 	postfix_exp	= concatenation do |postfix_exp|
 		element primary_exp
-		element alternation(concatenation("[", exp, "]"), concatenation("(", argument_exp_list, ")"), concatenation("(", ")"), concatenation(".", id), concatenation("->", id), "++", "--").any
+		element alternation(concatenation("[", exp, "]"), concatenation("(", argument_exp_list, ")"), concatenation("(", ")"), concatenation(".", identifier), concatenation("->", identifier), "++", "--").any
 	end
 	unary_operator	= '&' | '*' | '+' | '-' | '~' | '!'
 	unary_exp	= alternation do |unary_exp|
@@ -127,9 +189,9 @@ module Grammars
 		element logical_or_exp
 	end
 	const_exp	= conditional_exp
-	id_list	= concatenation(id, concatenation(",", id).any)
+	id_list	= concatenation(identifier, concatenation(",", identifier).any)
 	direct_declarator	= alternation do |direct_declarator|
-		element concatenation(id, alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", id_list, ")"), concatenation("(", ")")).any)
+		element concatenation(identifier, alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", id_list, ")"), concatenation("(", ")")).any)
 		element concatenation("(", declarator, ")", alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", id_list, ")"), concatenation("(", ")")).any)
 	end
 	declarator	= alternation do |declarator|
@@ -152,24 +214,24 @@ module Grammars
 	end
 	struct_decl_list	= struct_decl.at_least(1)
 	struct_or_union_spec	= alternation do |struct_or_union_spec|
-		element concatenation(struct_or_union, id, "{", struct_decl_list, "}")
+		element concatenation(struct_or_union, identifier, "{", struct_decl_list, "}")
 		element concatenation(struct_or_union, "{", struct_decl_list, "}")
-		element concatenation(struct_or_union, id)
+		element concatenation(struct_or_union, identifier)
 	end
 	enumerator	= alternation do |enumerator|
-		element id
-		element concatenation(id, "=", const_exp)
+		element identifier
+		element concatenation(identifier, "=", const_exp)
 	end
 	enumerator_list	= concatenation do |enumerator_list|
 		element enumerator
 		element concatenation(",", enumerator).any
 	end
 	enum_spec	= alternation do |enum_spec|
-		element concatenation("enum", id, "{", enumerator_list, "}")
+		element concatenation("enum", identifier, "{", enumerator_list, "}")
 		element concatenation("enum", "{", enumerator_list, "}")
-		element concatenation("enum", id)
+		element concatenation("enum", identifier)
 	end
-	typedef_name	= id
+	typedef_name	= identifier
 	type_spec	= alternation do |type_spec|
 		element "void"
 		element "char"
@@ -200,7 +262,7 @@ module Grammars
 	decl	= alternation(concatenation(decl_specs, init_declarator_list, ";"), concatenation(decl_specs, ";"))
 	decl_list	= decl.at_least(1)
 	labeled_stat	= alternation do |labeled_stat|
-		element concatenation(id, ":", stat)
+		element concatenation(identifier, ":", stat)
 		element concatenation("case", const_exp, ":", stat)
 		element concatenation("default", ":", stat)
 	end
@@ -222,7 +284,7 @@ module Grammars
 		element concatenation("for", "(", ";", ";", exp, ")", stat)
 		element concatenation("for", "(", ";", ";", ")", stat)
 	end
-	jump_stat	= alternation(concatenation("goto", id, ";"), concatenation("continue", ";"), concatenation("break", ";"), concatenation("return", exp, ";"), concatenation("return", ";"))
+	jump_stat	= alternation(concatenation("goto", identifier, ";"), concatenation("continue", ";"), concatenation("break", ";"), concatenation("return", exp, ";"), concatenation("return", ";"))
 	stat	= alternation do |stat|
 		element labeled_stat
 		element exp_stat
