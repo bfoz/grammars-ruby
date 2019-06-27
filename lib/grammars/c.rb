@@ -14,41 +14,37 @@ module Grammars
 	identifier	= /[^0-9][0-9_a-zA-Z]*/
 
 	type_qualifier	= 'const' | 'volatile'
-	spec_qualifier_list	= alternation do |spec_qualifier_list|
-		element concatenation(alternation(type_spec, type_qualifier).any, type_spec)
-		element concatenation(alternation(type_spec, type_qualifier).any, type_qualifier)
-	end
 	type_qualifier_list	= type_qualifier.at_least(1)
-	pointer	= alternation(concatenation(alternation(concatenation("*", type_qualifier_list), "*").any, "*", type_qualifier_list), concatenation(alternation(concatenation("*", type_qualifier_list), "*").any, "*"))
-	param_decl	= alternation do |param_decl|
+	pointer	= alternation(
+		concatenation(alternation(concatenation("*", type_qualifier_list), "*").any, "*", type_qualifier_list),
+		concatenation(alternation(concatenation("*", type_qualifier_list), "*").any, "*")
+	)
+	abstract_declarator = Grammar::Recursion.new
+	conditional_expression = Grammar::Recursion.new
+	declarator = Grammar::Recursion.new
+	decl_specs = Grammar::Recursion.new
+	const_exp	= conditional_expression
+	param_decl	= alternation do
 		element concatenation(decl_specs, declarator)
 		element concatenation(decl_specs, abstract_declarator)
 		element decl_specs
 	end
-	param_list	= concatenation do |param_list|
+	param_list	= concatenation do
 		element param_decl
 		element concatenation(",", param_decl).any
 	end
-	param_type_list	= alternation do |param_type_list|
+	param_type_list	= alternation do
 		element param_list
 		element concatenation(param_list, ",", "...")
 	end
-	direct_abstract_declarator	= alternation do |direct_abstract_declarator|
-		element concatenation("(", abstract_declarator, ")", alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", ")")).any)
+	direct_abstract_declarator	= alternation do
+		element concatenation("(", abstract_declarator, ")", alternation(concatenation("[", const_exp.optional, "]"), concatenation("(", param_type_list.optional, ")")).any)
 		element concatenation("[", const_exp, "]", alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", ")")).any)
 		element concatenation("[", "]", alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", ")")).any)
 		element concatenation("(", param_type_list, ")", alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", ")")).any)
 		element concatenation("(", ")", alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", ")")).any)
 	end
-	abstract_declarator	= alternation do |abstract_declarator|
-		element pointer
-		element concatenation(pointer, direct_abstract_declarator)
-		element direct_abstract_declarator
-	end
-	type_name	= alternation do |type_name|
-		element concatenation(spec_qualifier_list, abstract_declarator)
-		element spec_qualifier_list
-	end
+	abstract_declarator.grammar	= concatenation(pointer.optional, direct_abstract_declarator.optional)
 
 	# A.1.5 Constants
 
@@ -112,92 +108,98 @@ module Grammars
 	string_literal	= concatenation(/(u8|u|U|L)?/, '"', s_char.any, '"')
 
 	assignment_operator	= '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|='
-	assignment_exp	= concatenation do |assignment_exp|
+	expression = Grammar::Recursion.new
+	type_name = Grammar::Recursion.new
+	unary_exp = Grammar::Recursion.new
+	assignment_exp	= concatenation do
 		element concatenation(unary_exp, assignment_operator).any
-		element conditional_exp
-	end
-	exp	= concatenation do |exp|
-		element assignment_exp
-		element concatenation(",", assignment_exp).any
-	end
-	primary_exp	= alternation do |primary_exp|
-		element identifier
-		element constant
-		element string_literal
-		element concatenation("(", exp, ")")
-	end
-	argument_exp_list	= concatenation do |argument_exp_list|
-		element assignment_exp
-		element concatenation(",", assignment_exp).any
-	end
-	postfix_exp	= concatenation do |postfix_exp|
-		element primary_exp
-		element alternation(concatenation("[", exp, "]"), concatenation("(", argument_exp_list, ")"), concatenation("(", ")"), concatenation(".", identifier), concatenation("->", identifier), "++", "--").any
+		element conditional_expression
 	end
 	unary_operator	= '&' | '*' | '+' | '-' | '~' | '!'
 	unary_exp	= alternation do |unary_exp|
+		cast_exp	= concatenation do
+			element concatenation("(", type_name, ")").any
+			element unary_exp
+		end
+		mult_exp	= concatenation do
+			element cast_exp
+			element alternation(concatenation("*", cast_exp), concatenation("/", cast_exp), concatenation("%", cast_exp)).any
+		end
+		additive_exp	= concatenation do
+			element mult_exp
+			element alternation(concatenation("+", mult_exp), concatenation("-", mult_exp)).any
+		end
+		shift_expression	= concatenation do
+			element additive_exp
+			element alternation(concatenation("<<", additive_exp), concatenation(">>", additive_exp)).any
+		end
+		relational_exp	= concatenation do
+			element shift_expression
+			element alternation(concatenation("<", shift_expression), concatenation(">", shift_expression), concatenation("<=", shift_expression), concatenation(">=", shift_expression)).any
+		end
+		equality_exp	= concatenation do
+			element relational_exp
+			element alternation(concatenation("==", relational_exp), concatenation("!=", relational_exp)).any
+		end
+		and_exp	= concatenation do
+			element equality_exp
+			element concatenation("&", equality_exp).any
+		end
+		exclusive_or_exp	= concatenation do
+			element and_exp
+			element concatenation("^", and_exp).any
+		end
+		inclusive_or_exp	= concatenation do
+			element exclusive_or_exp
+			element concatenation("|", exclusive_or_exp).any
+		end
+		logical_and_exp	= concatenation do
+			element inclusive_or_exp
+			element concatenation("&&", inclusive_or_exp).any
+		end
+		logical_or_exp	= concatenation do
+			element logical_and_exp
+			element concatenation("||", logical_and_exp).any
+		end
+
+		# (6.5.17)
+		expression.grammar	= concatenation do
+			# (6.5.16)
+			conditional_expression.grammar	= concatenation do
+				element concatenation(logical_or_exp, "?", expression, ":").any
+				element logical_or_exp
+			end
+
+			element assignment_exp
+			element concatenation(",", assignment_exp).any
+		end
+
+		primary_exp	= alternation do
+			element identifier
+			element constant
+			element string_literal
+			element concatenation("(", expression, ")")
+		end
+		argument_exp_list	= concatenation do
+			element assignment_exp
+			element concatenation(",", assignment_exp).any
+		end
+		postfix_exp	= concatenation do
+			element primary_exp
+			element alternation(concatenation("[", expression, "]"), concatenation("(", argument_exp_list, ")"), concatenation("(", ")"), concatenation(".", identifier), concatenation("->", identifier), "++", "--").any
+		end
+
 		element concatenation(('++' | '--' | 'sizeof').any, postfix_exp)
 		element concatenation(('++' | '--' | 'sizeof').any, unary_operator, cast_exp)
 		element concatenation(('++' | '--' | 'sizeof').any, "sizeof", "(", type_name, ")")
 	end
-	cast_exp	= concatenation do |cast_exp|
-		element concatenation("(", type_name, ")").any
-		element unary_exp
-	end
-	mult_exp	= concatenation do |mult_exp|
-		element cast_exp
-		element alternation(concatenation("*", cast_exp), concatenation("/", cast_exp), concatenation("%", cast_exp)).any
-	end
-	additive_exp	= concatenation do |additive_exp|
-		element mult_exp
-		element alternation(concatenation("+", mult_exp), concatenation("-", mult_exp)).any
-	end
-	shift_expression	= concatenation do |shift_expression|
-		element additive_exp
-		element alternation(concatenation("<<", additive_exp), concatenation(">>", additive_exp)).any
-	end
-	relational_exp	= concatenation do |relational_exp|
-		element shift_expression
-		element alternation(concatenation("<", shift_expression), concatenation(">", shift_expression), concatenation("<=", shift_expression), concatenation(">=", shift_expression)).any
-	end
-	equality_exp	= concatenation do |equality_exp|
-		element relational_exp
-		element alternation(concatenation("==", relational_exp), concatenation("!=", relational_exp)).any
-	end
-	and_exp	= concatenation do |and_exp|
-		element equality_exp
-		element concatenation("&", equality_exp).any
-	end
-	exclusive_or_exp	= concatenation do |exclusive_or_exp|
-		element and_exp
-		element concatenation("^", and_exp).any
-	end
-	inclusive_or_exp	= concatenation do |inclusive_or_exp|
-		element exclusive_or_exp
-		element concatenation("|", exclusive_or_exp).any
-	end
-	logical_and_exp	= concatenation do |logical_and_exp|
-		element inclusive_or_exp
-		element concatenation("&&", inclusive_or_exp).any
-	end
-	logical_or_exp	= concatenation do |logical_or_exp|
-		element logical_and_exp
-		element concatenation("||", logical_and_exp).any
-	end
-	conditional_exp	= concatenation do |conditional_exp|
-		element concatenation(logical_or_exp, "?", exp, ":").any
-		element logical_or_exp
-	end
-	const_exp	= conditional_exp
+
 	id_list	= concatenation(identifier, concatenation(",", identifier).any)
 	direct_declarator	= alternation do |direct_declarator|
 		element concatenation(identifier, alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", id_list, ")"), concatenation("(", ")")).any)
 		element concatenation("(", declarator, ")", alternation(concatenation("[", const_exp, "]"), concatenation("[", "]"), concatenation("(", param_type_list, ")"), concatenation("(", id_list, ")"), concatenation("(", ")")).any)
 	end
-	declarator	= alternation do |declarator|
-		element concatenation(pointer, direct_declarator)
-		element direct_declarator
-	end
+	declarator.grammar	= concatenation(pointer.optional, direct_declarator)
 	struct_declarator	= alternation do |struct_declarator|
 		element declarator
 		element concatenation(declarator, ":", const_exp)
@@ -207,12 +209,7 @@ module Grammars
 		element struct_declarator
 		element concatenation(",", struct_declarator).any
 	end
-	struct_decl	= concatenation do |struct_decl|
-		element spec_qualifier_list
-		element struct_declarator_list
-		element ";"
-	end
-	struct_decl_list	= struct_decl.at_least(1)
+	struct_decl_list = Grammar::Recursion.new
 	struct_or_union_spec	= alternation do |struct_or_union_spec|
 		element concatenation(struct_or_union, identifier, "{", struct_decl_list, "}")
 		element concatenation(struct_or_union, "{", struct_decl_list, "}")
@@ -232,7 +229,9 @@ module Grammars
 		element concatenation("enum", identifier)
 	end
 	typedef_name	= identifier
-	type_spec	= alternation do |type_spec|
+
+	# (6.7.2)
+	type_specifier	= alternation do |type_specifier|
 		element "void"
 		element "char"
 		element "short"
@@ -246,13 +245,22 @@ module Grammars
 		element enum_spec
 		element typedef_name
 	end
-	decl_specs	= alternation do |decl_specs|
-		element concatenation(alternation(storage_class_spec, type_spec, type_qualifier).any, storage_class_spec)
-		element concatenation(alternation(storage_class_spec, type_spec, type_qualifier).any, type_spec)
-		element concatenation(alternation(storage_class_spec, type_spec, type_qualifier).any, type_qualifier)
+
+	# (6.7.2.1)
+	specifier_qualifier_list	= alternation(type_specifier, type_qualifier).at_least(1)
+	struct_decl	= concatenation(specifier_qualifier_list, struct_declarator_list, ";")
+	struct_decl_list.grammar	= struct_decl.at_least(1)
+
+	# (6.7.7)
+	type_name.grammar	= concatenation(specifier_qualifier_list, abstract_declarator.optional)
+
+	decl_specs.grammar	= alternation do |decl_specs|
+		element concatenation(alternation(storage_class_spec, type_specifier, type_qualifier).any, storage_class_spec)
+		element concatenation(alternation(storage_class_spec, type_specifier, type_qualifier).any, type_specifier)
+		element concatenation(alternation(storage_class_spec, type_specifier, type_qualifier).any, type_qualifier)
 	end
-	initializer_list	= concatenation(initializer, concatenation(",", initializer).any)
 	initializer	= alternation do |initializer|
+		initializer_list	= concatenation(initializer, concatenation(",", initializer).any)
 		element assignment_exp
 		element concatenation("{", initializer_list, "}")
 		element concatenation("{", initializer_list, ",", "}")
@@ -261,31 +269,33 @@ module Grammars
 	init_declarator_list	= concatenation(init_declarator, concatenation(",", init_declarator).any)
 	decl	= alternation(concatenation(decl_specs, init_declarator_list, ";"), concatenation(decl_specs, ";"))
 	decl_list	= decl.at_least(1)
-	labeled_stat	= alternation do |labeled_stat|
-		element concatenation(identifier, ":", stat)
-		element concatenation("case", const_exp, ":", stat)
-		element concatenation("default", ":", stat)
-	end
-	exp_stat	= alternation(concatenation(exp, ";"), ";")
-	selection_stat	= alternation do |selection_stat|
-		element concatenation("if", "(", exp, ")", stat)
-		element concatenation("if", "(", exp, ")", stat, "else", stat)
-		element concatenation("switch", "(", exp, ")", stat)
-	end
-	iteration_stat	= alternation do |iteration_stat|
-		element concatenation("while", "(", exp, ")", stat)
-		element concatenation("do", stat, "while", "(", exp, ")", ";")
-		element concatenation("for", "(", exp, ";", exp, ";", exp, ")", stat)
-		element concatenation("for", "(", exp, ";", exp, ";", ")", stat)
-		element concatenation("for", "(", exp, ";", ";", exp, ")", stat)
-		element concatenation("for", "(", exp, ";", ";", ")", stat)
-		element concatenation("for", "(", ";", exp, ";", exp, ")", stat)
-		element concatenation("for", "(", ";", exp, ";", ")", stat)
-		element concatenation("for", "(", ";", ";", exp, ")", stat)
-		element concatenation("for", "(", ";", ";", ")", stat)
-	end
-	jump_stat	= alternation(concatenation("goto", identifier, ";"), concatenation("continue", ";"), concatenation("break", ";"), concatenation("return", exp, ";"), concatenation("return", ";"))
+	compound_stat = Grammar::Recursion.new
 	stat	= alternation do |stat|
+		labeled_stat	= alternation do
+			element concatenation(identifier, ":", stat)
+			element concatenation("case", const_exp, ":", stat)
+			element concatenation("default", ":", stat)
+		end
+		exp_stat	= alternation(concatenation(expression, ";"), ";")
+		selection_stat	= alternation do
+			element concatenation("if", "(", expression, ")", stat)
+			element concatenation("if", "(", expression, ")", stat, "else", stat)
+			element concatenation("switch", "(", expression, ")", stat)
+		end
+		iteration_stat	= alternation do
+			element concatenation("while", "(", expression, ")", stat)
+			element concatenation("do", stat, "while", "(", expression, ")", ";")
+			element concatenation("for", "(", expression, ";", expression, ";", expression, ")", stat)
+			element concatenation("for", "(", expression, ";", expression, ";", ")", stat)
+			element concatenation("for", "(", expression, ";", ";", expression, ")", stat)
+			element concatenation("for", "(", expression, ";", ";", ")", stat)
+			element concatenation("for", "(", ";", expression, ";", expression, ")", stat)
+			element concatenation("for", "(", ";", expression, ";", ")", stat)
+			element concatenation("for", "(", ";", ";", expression, ")", stat)
+			element concatenation("for", "(", ";", ";", ")", stat)
+		end
+		jump_stat	= alternation(concatenation("goto", identifier, ";"), concatenation("continue", ";"), concatenation("break", ";"), concatenation("return", expression, ";"), concatenation("return", ";"))
+
 		element labeled_stat
 		element exp_stat
 		element compound_stat
@@ -294,7 +304,7 @@ module Grammars
 		element jump_stat
 	end
 	stat_list	= stat.at_least(1)
-	compound_stat	= alternation do |compound_stat|
+	compound_stat.grammar	= alternation do |compound_stat|
 		element concatenation("{", decl_list, stat_list, "}")
 		element concatenation("{", stat_list, "}")
 		element concatenation("{", decl_list, "}")
