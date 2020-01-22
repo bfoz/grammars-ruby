@@ -17,7 +17,7 @@ module Grammars
 	DEDENT = //
 	ENDMARKER = ''
 	INDENT = /[\t ]+/
-	NAME = /\s+/
+	NAME = /\w+/
 	NEWLINE = /\n/
 
 	BINARY_NUMBER = /0[bB][01_]+/
@@ -26,7 +26,7 @@ module Grammars
 	OCTAL_NUMBER = /0[oO][0-7_]+/
 	NUMBER = BINARY_NUMBER | DECIMAL_NUMBER | HEXADECIMAL_NUMBER | OCTAL_NUMBER
 
-	STRING = /\s/
+	STRING = /\w+/
 
 	# @group Expression
 
@@ -36,9 +36,8 @@ module Grammars
 	exprlist = nil
 	star_expr = nil
 	testlist = nil
-	testlist_star_expr = nil
 	yield_expr = nil
-	_test = alternation do |_test|
+	Test = alternation do |_test|
 
 	    # testlist: test (',' test)* [',']
 	    testlist = concatenation(_test, concatenation(',', _test).any, ','.optional)
@@ -113,13 +112,11 @@ module Grammars
 		# comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
 		comp_op = '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|concatenation('not', 'in')|'is'|concatenation('is', 'not')
 
-		# comparison: expr (comp_op expr)*
-		comparison = concatenation(expr, concatenation(comp_op, expr).any)
-
 		# not_test: 'not' not_test | comparison
+		# comparison: expr (comp_op expr)*
 		not_test = alternation do |_not_test|
 		    element concatenation('not', /\s*/, _not_test)
-		    element comparison
+		    element Comparison: concatenation(expr, ComparisonRepetition = concatenation(comp_op, expr).any)
 		end
 
 		# and_test: not_test ('and' not_test)*
@@ -209,22 +206,20 @@ module Grammars
 		atom = concatenation('(', (yield_expr | testlist_comp).optional, ')') |
 		       concatenation('[', testlist_comp.optional, ']') |
 		       concatenation('{', dictorsetmaker.optional, '}') |
-		       NAME | NUMBER | STRING.one_or_more | '...' | 'None' | 'True' | 'False'
+		       NAME | NUMBER | STRING | '...' | 'None' | 'True' | 'False'
 
 		# atom_expr: ['await'] atom trailer*
 		atom_expr = concatenation('await'.optional, atom, trailer.any)
 
 		# factor: ('+'|'-'|'~') factor | power
-		factor = alternation do |factor|
-		    # power: atom_expr ['**' factor]
-		    power = concatenation(atom_expr, concatenation('**', factor).optional)
-
-		    element concatenation(('+'|'-'|'~'), factor)
-		    element power
+		# power: atom_expr ['**' factor]
+		Factor = concatenation do |factor|
+		    element ('+'|'-'|'~').any
+		    element concatenation(atom_expr, concatenation('**', factor).optional)
 		end
 
 		# term: factor (('*'|'@'|'/'|'%'|'//') factor)*
-		term = concatenation(factor, concatenation(('*'|'@'|'/'|'%'|'//'), factor).any)
+		term = concatenation(Factor, concatenation(('*'|'@'|'/'|'%'|'//'), Factor).any)
 
 		# arith_expr: term (('+'|'-') term)*
 		arith_expr = concatenation(term, concatenation(('+'|'-'), term).any)
@@ -244,19 +239,20 @@ module Grammars
 
 	    # @endgroup Expression
 
-	    element concatenation(or_test, concatenation('if', or_test, 'else', _test).optional)
-	    element lambdef
+	    element TestFirst: concatenation(or_test, concatenation('if', or_test, 'else', _test).optional)
+	    element LambdaDefinition: lambdef
 	end
 
 	# @group Statements
 
 	# testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
-	testlist_star_expr = concatenation(_test|star_expr, concatenation(',', _test|star_expr).any, ','.optional)
+	# testlist_star_expr = concatenation(Test|star_expr, concatenation(',', Test|star_expr).any, ','.optional)
+	# Testlist_star_expr = concatenation(Test, TestListRepetition = concatenation(',', Test).any, ','.optional)
 
 	# For normal and annotated assignments, additional restrictions enforced by the interpreter
 
 	# annassign: ':' test ['=' test]
-	annassign = concatenation(':', _test, concatenation('=', _test).optional)
+	annassign = concatenation(':', Test, concatenation('=', Test).optional)
 
 	# augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' |
 	#             '<<=' | '>>=' | '**=' | '//=')
@@ -264,35 +260,10 @@ module Grammars
 
 	# expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
 	#                      ('=' (yield_expr|testlist_star_expr))*)
-	expr_stmt = concatenation(
-	    testlist_star_expr,
-	    (annassign | concatenation(augassign, (yield_expr|testlist)) | concatenation('=', (yield_expr|testlist_star_expr)).any)
-	)
-
-	# del_stmt: 'del' exprlist
-	del_stmt = concatenation('del', exprlist)
-
-	# pass_stmt: 'pass'
-	pass_stmt = 'pass'
-
-	# break_stmt: 'break'
-	break_stmt = 'break'
-
-	# continue_stmt: 'continue'
-	continue_stmt =  'continue'
-
-	# return_stmt: 'return' [testlist]
-	return_stmt = concatenation('return', testlist.optional)
-
-	# yield_stmt: yield_expr
-	yield_stmt = yield_expr
-
-	# raise_stmt: 'raise' [_test ['from' _test]]
-	raise_stmt = concatenation('raise', concatenation(_test, concatenation('from', _test).optional).optional)
-
-	# flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt | yield_stmt
-	flow_stmt = break_stmt | continue_stmt | return_stmt | raise_stmt | yield_stmt
-
+	Expr_stmt = concatenation do
+	    element Testlist_star_expr: concatenation(Test|star_expr, concatenation(',', Test|star_expr).any, ','.optional)
+	    element annassign | concatenation(augassign, (yield_expr|testlist)) | concatenation('=', (yield_expr|Testlist_star_expr)).any
+	end
 
 	# dotted_name: NAME ('.' NAME)*
 	dotted_name = concatenation(NAME, concatenation('.', NAME).any)
@@ -317,98 +288,102 @@ module Grammars
 	#               'import' ('*' | '(' import_as_names ')' | import_as_names))
 	import_from = concatenation('from', (concatenation(('.' | '...').any, dotted_name) | ('.' | '...').one_or_more), 'import', ('*' | concatenation('(', import_as_names, ')') | import_as_names))
 
-	# import_stmt: import_name | import_from
-	import_stmt = import_name | import_from
+	# t_primary:
+	#     | t_primary '.' NAME &t_lookahead
+	#     | t_primary slicing &t_lookahead
+	#     | t_primary genexp  &t_lookahead
+	#     | t_primary '(' [arguments] ')' &t_lookahead
+	#     | atom &t_lookahead
+	# t_lookahead: '(' | '[' | '.'
 
-	# global_stmt: 'global' NAME (',' NAME)*
-	global_stmt = concatenation('global', NAME, concatenation(',', NAME).any)
+	# target:
+	#     | t_primary '.' NAME !t_lookahead
+	#     | t_primary slicing !t_lookahead
+	#     | t_atom
+	# target = alternation do |_target|
+	#     # targets: ','.target+ [',']
+	#     targets = concatenation(target, concatenation(',', target), ','.optional)
 
-	# nonlocal_stmt: 'nonlocal' NAME (',' NAME)*
-	nonlocal_stmt = concatenation('nonlocal', NAME, concatenation(',', NAME).any)
+	#     element concatenation(t_primary, '.', NAME)
+	#     element concatenation(t_primary, slicing)
 
-	# assert_stmt: 'assert' test [',' test]
-	assert_stmt = concatenation('assert', _test, concatenation(',', _test).optional)
+	#     # t_atom:
+	#     #     | NAME
+	#     #     | '(' [targets] ')'
+	#     #     | '[' [targets] ']'
+	#     element NAME
+	#     element concatenation('(', targets.optional, ')')
+	#     element concatenation('[', targets.optional, ']')
+	# end
 
-	# small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt |
-	#              import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
-	small_stmt = expr_stmt | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | nonlocal_stmt | assert_stmt
+	# NOTE: yield_expression may start with 'yield'; yield_expr must start with 'yield'
+	# assignment:
+	#     | !'lambda' target ':' expression ['=' yield_expression]
+	#     | (star_targets '=')+ (yield_expr | expressions)
+	#     | target augassign (yield_expr | expressions)
 
-	# simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-	SimpleStatement = concatenation(small_stmt, concatenation(';', small_stmt).any, ';'.optional, NEWLINE)
+
+	# NOTE: assignment MUST precede expression, else the parser will get stuck;
+	# but it must follow all others, else reserved words will match a simple NAME.
+	# small_stmt:
+	#     | return_stmt
+	#     | import_stmt
+	#     | pass_stmt
+	#     | raise_stmt
+	#     | yield_stmt
+	#     | assert_stmt
+	#     | del_stmt
+	#     | global_stmt
+	#     | nonlocal_stmt
+	#     | break_stmt
+	#     | continue_stmt
+	#     | assignment
+	#     | expressions
+	SmallStatement = alternation do
+	    element Return: concatenation('return', testlist.optional)			# return_stmt: 'return' [testlist]
+	    element Import: (import_name | import_from)					# import_stmt: import_name | import_from
+	    element Pass: 'pass'							# pass_stmt: 'pass'
+	    element Raise: concatenation('raise', concatenation(Test, concatenation('from', Test).optional).optional)	# raise_stmt: 'raise' [_test ['from' _test]]
+	    element Yield: yield_expr							# yield_stmt: yield_expr
+	    element Assert: concatenation('assert', Test, concatenation(',', Test).optional)	# assert_stmt: 'assert' test [',' test]
+	    element Delete: concatenation('del', exprlist)				# del_stmt: 'del' exprlist
+	    element Global: concatenation('global', NAME, concatenation(',', NAME).any)	# global_stmt: 'global' NAME (',' NAME)*
+	    element NonLocal: concatenation('nonlocal', NAME, concatenation(',', NAME).any)	# nonlocal_stmt: 'nonlocal' NAME (',' NAME)*
+	    element Break: 'break'							# break_stmt: 'break'
+	    element Continue: 'continue'						# continue_stmt: 'continue'
+	 #    element Assignment: alternation {
+		# element concatenation(target, ':', Expression, concatenation('=', yield_expression).optional)
+		# element concatenation(concatenation(star_targets, '=').one_or_more, (yield_expression | expressions))
+		# element concatenation(target, augassign, (yield_expression | expressions))
+	 #    }
+	 #    element expressions
+	end
 
 	# @endgroup
 
 	# NB compile.c makes sure that the default except clause is last
 	# except_clause: 'except' [test ['as' NAME]]
-	except_clause = concatenation('except', concatenation(_test, concatenation('as', NAME).optional))
+	except_clause = concatenation('except', concatenation(Test, concatenation('as', NAME).optional))
 
-	# tfpdef: NAME [':' test]
-	tfpdef = concatenation(NAME, concatenation(':', _test).optional)
+	FunctionParameter = alternation do
+	    element PlainName: concatenation(NAME, concatenation(':', Test).optional)
+	    element NameWithDefault: concatenation(PlainName, '=', Test)
+	    element StarName: concatenation('*', PlainName.optional)
+	    element DoubleStarName: concatenation('**', PlainName.optional)
+	end
 
-	# typedargslist: (tfpdef ['=' test] (',' tfpdef ['=' test])* [',' [
-	#         '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-	#       | '**' tfpdef [',']]]
-	#   | '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-	#   | '**' tfpdef [','])
-	typedargslist = alternation(
-	    concatenation(
-		tfpdef,
-		concatenation('=', _test),
-		concatenation(
-			',',
-			tfpdef,
-			concatenation('=', _test).optional
-		).any,
-		concatenation(
-			',',
-			concatenation(
-				'*',
-				tfpdef.optional,
-				concatenation(
-					',',
-					tfpdef,
-					concatenation('=', _test).optional
-				).any,
-				alternation(
-					concatenation(
-						',',
-						concatenation('**', tfpdef, ','.optional).optional
-					).optional,
-				 	concatenation('**', tfpdef, ','.optional)
-				)
-			).optional
-		).optional
-	    ),
-	    concatenation('*',
-		tfpdef.optional,
-		concatenation(
-			',',
-			tfpdef,
-			concatenation('=', _test).optional
-		).any,
-		concatenation(
-			',',
-			concatenation('**', tfpdef, ','.optional).optional
-		).optional
-	    ),
-	    concatenation('**', tfpdef, ','.optional)
-	)
+	FunctionParameters = concatenation(FunctionParameter, concatenation(/\s*,\s*/, FunctionParameter).any, /(\s*,)?/)
 
 	# stmt: simple_stmt | compound_stmt
-	compound_stmt = nil
-	stmt = alternation do |stmt|
+	Statement = alternation do |stmt|
+	    # simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
+	    element Simple: concatenation(SmallStatement, concatenation(';', SmallStatement).any, ';'.optional)
 
 	    # suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
-	    suite = SimpleStatement | concatenation(NEWLINE, INDENT, stmt.one_or_more, DEDENT)
-
-	    # parameters: '(' [typedargslist] ')'
-	    parameters = concatenation('(', typedargslist.optional, ')')
+	    suite = Simple | concatenation(NEWLINE, INDENT, stmt.one_or_more, DEDENT)
 
 	    # funcdef: 'def' NAME parameters ['->' test] ':' suite
-	    funcdef = concatenation('def', NAME, parameters, concatenation('->', _test).optional, ':', suite)
-
-	    # async_funcdef: 'async' funcdef
-	    async_funcdef = concatenation('async', funcdef)
+	    element FunctionDefinition: concatenation('async'.optional, /\s*/, 'def', /\s*/, NAME, /\s*/, '(', /\s*/, FunctionParameters.optional, /\s*/, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, suite)
 
 	    # classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 	    classdef = concatenation('class', NAME, concatenation('(', arglist.optional, ')').optional, ':', suite)
@@ -420,27 +395,24 @@ module Grammars
 	    decorators = decorator.one_or_more
 
 	    # decorated: decorators (classdef | funcdef | async_funcdef)
-	    decorated = concatenation(decorators, (classdef | funcdef | async_funcdef))
+	    decorated = concatenation(decorators, (classdef | FunctionDefinition))
 
 	    # @group Compound Statements
 
 	    # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
-	    for_stmt = concatenation('for', exprlist, 'in', testlist, ':', suite, concatenation('else', ':', suite).optional)
+	    element For: concatenation('async'.optional, /\s*/, 'for', exprlist, 'in', testlist, ':', suite, concatenation('else', ':', suite).optional)
 
 	    # with_item: test ['as' expr]
-	    with_item = concatenation(_test, concatenation('as', Expression).optional)
+	    with_item = concatenation(Test, concatenation('as', Expression).optional)
 
 	    # with_stmt: 'with' with_item (',' with_item)*  ':' suite
-	    with_stmt = concatenation('with', with_item, concatenation(',', with_item).any,  ':', suite)
-
-	    # async_stmt: 'async' (funcdef | with_stmt | for_stmt)
-	    async_stmt = concatenation('async', (funcdef | with_stmt | for_stmt))
+	    element With: concatenation('async'.optional, /\s*/, 'with', with_item, concatenation(',', with_item).any,  ':', suite)
 
 	    # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-	    if_stmt = concatenation('if', _test, ':', suite, concatenation('elif', _test, ':', suite).any, concatenation('else', ':', suite).optional)
+	    element If: concatenation('if', Test, ':', suite, concatenation('elif', Test, ':', suite).any, concatenation('else', ':', suite).optional)
 
 	    # while_stmt: 'while' test ':' suite ['else' ':' suite]
-	    while_stmt = concatenation('while', _test, ':', suite, concatenation('else', ':', suite).optional)
+	    element While: concatenation('while', Test, ':', suite, concatenation('else', ':', suite).optional)
 
 	    # try_stmt: ('try' ':' suite
 	    # 	   ((except_clause ':' suite)+
@@ -460,25 +432,13 @@ module Grammars
 	    )
 
 	    # compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
-	    compound_stmt = if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
-
-	    # @endgroup Compound Statements
-
-	    element SimpleStatement
-	    element compound_stmt
+	    # async_stmt: 'async' (funcdef | with_stmt | for_stmt)
+	    element try_stmt
+	    element classdef
+	    element decorated
 	end
 
-	# single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
-	single_input = NEWLINE | SimpleStatement | concatenation(compound_stmt, NEWLINE)
-
 	# file_input: (NEWLINE | stmt)* ENDMARKER
-	file_input = concatenation((NEWLINE | stmt).any, ENDMARKER)
-
-	# eval_input: testlist NEWLINE* ENDMARKER
-	TestList = testlist
-	EvalInput = concatenation(TestList, NEWLINE.any, ENDMARKER)
-
-	# not used in grammar, but may appear in "node" passed from Parser to Compiler
-	# encoding_decl: NAME
+	Statements = (NEWLINE | Statement).any
     end
 end

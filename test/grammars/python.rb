@@ -6,12 +6,13 @@ RSpec.shared_examples 'a Python3 grammar' do
     def arith_expr_number(number)
 	Grammars::Python::Expression[0][0][0].first.new(							# arith_expr
 	    Grammars::Python::Expression[0][0][0].first.first.new(						# term
-		    Grammars::Python::Expression[0][0][0][0][0][0].new(						# factor
+		    Grammars::Python::Factor.new(								# factor
+		    	[],
 			Grammars::Python::Expression[0][0][0][0][0][0][1].new(					# power
 			    Grammars::Python::Expression[0][0][0][0][0][0][1][0].new( 				# atom_expr
 				nil,
 				Grammars::Python::Expression[0][0][0][0][0][0][1][0][1].new(			# atom
-				    Grammars::Python::Expression[0][0][0][0][0][0][1][0][1][4].new(number.to_s)	# NUMBER
+				    number.to_s									# NUMBER
 				),
 				[]
 			    ),
@@ -129,6 +130,160 @@ RSpec.shared_examples 'a Python3 grammar' do
 			    ),
 			)
 		    ]
+		)
+	    ])
+	end
+    end
+
+    context 'Statement' do
+	before :each do
+	    parser.push Grammars::Python::Statement
+	end
+
+	it 'must parse a simple function definition' do
+	    expect(parser.parse("def foo():\n    pass")).to eq([
+		Grammars::Python::Statement.new(
+		    Grammars::Python::Statement::FunctionDefinition.new(
+			nil,
+			"",
+			"def",
+			" ",
+			"foo",
+			"",
+			"(",
+			"",
+			nil,
+			"",
+			")",
+			nil,
+			":",
+			"",
+			Grammars::Python::Statement::FunctionDefinition.last.new(
+			    Grammars::Python::Statement::FunctionDefinition.last[1].new(
+				"\n",
+				"    ",
+				[Grammars::Python::Statement.new(
+			    	    Grammars::Python::Statement::Simple.new(
+					Grammars::Python::SmallStatement.new(
+					    Grammars::Python::SmallStatement::Pass
+					),
+					[],
+					nil
+				    )
+				)],
+				""
+			    )
+			)
+		    )
+		)
+	    ])
+	end
+
+	it 'must parse a function definition that has positional parameters' do
+	    expect(parser.parse("def foo(a):\n    pass")).to eq([
+		Grammars::Python::Statement.new(
+		    Grammars::Python::Statement::FunctionDefinition.new(
+			nil,
+			"",
+			"def",
+			" ",
+			"foo",
+			"",
+			"(",
+			"",
+			Grammars::Python::FunctionParameters.new(
+			    Grammars::Python::FunctionParameter.new(
+				Grammars::Python::FunctionParameter::PlainName.new('a', nil)
+			    ),
+			    [],
+			    ''
+			),
+			"",
+			")",
+			nil,
+			":",
+			"",
+			Grammars::Python::Statement::FunctionDefinition.last.new(
+			    Grammars::Python::Statement::FunctionDefinition.last[1].new(
+				"\n",
+				"    ",
+				[Grammars::Python::Statement.new(
+			    	    Grammars::Python::Statement::Simple.new(
+					Grammars::Python::SmallStatement.new(
+					    Grammars::Python::SmallStatement::Pass
+					),
+					[],
+					nil
+				    )
+				)],
+				""
+			    )
+			)
+		    )
+		)
+	    ])
+	end
+
+	it 'must parse a function definition that has rest-parameters' do
+	    expect(parser.parse("def foo(a, b, *c, **d):\n    pass")).to eq([
+		Grammars::Python::Statement.new(
+		    Grammars::Python::Statement::FunctionDefinition.new(
+			nil,
+			"",
+			"def",
+			" ",
+			"foo",
+			"",
+			"(",
+			"",
+			Grammars::Python::FunctionParameters.new(
+			    Grammars::Python::FunctionParameter.new(
+				Grammars::Python::FunctionParameter::PlainName.new('a', nil),
+			    ),
+			    [
+				Grammars::Python::FunctionParameters[1].grammar.new(
+				    ', ',
+				    Grammars::Python::FunctionParameter.new(
+					Grammars::Python::FunctionParameter::PlainName.new('b', nil),
+				    ),
+				),
+				Grammars::Python::FunctionParameters[1].grammar.new(
+				    ', ',
+				    Grammars::Python::FunctionParameter.new(
+					Grammars::Python::FunctionParameter::StarName.new('*', Grammars::Python::FunctionParameter::PlainName.new('c', nil)),
+				    ),
+				),
+				Grammars::Python::FunctionParameters[1].grammar.new(
+				    ', ',
+				    Grammars::Python::FunctionParameter.new(
+					Grammars::Python::FunctionParameter::DoubleStarName.new('**', Grammars::Python::FunctionParameter::PlainName.new('d', nil))
+				    ),
+				)
+			    ],
+			    ''
+			),
+			"",
+			")",
+			nil,
+			":",
+			"",
+			Grammars::Python::Statement::FunctionDefinition.last.new(
+			    Grammars::Python::Statement::FunctionDefinition.last[1].new(
+				"\n",
+				"    ",
+				[Grammars::Python::Statement.new(
+			    	    Grammars::Python::Statement::Simple.new(
+					Grammars::Python::SmallStatement.new(
+					    Grammars::Python::SmallStatement::Pass
+					),
+					[],
+					nil
+				    )
+				)],
+				""
+			    )
+			)
+		    )
 		)
 	    ])
 	end
