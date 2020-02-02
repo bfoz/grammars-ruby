@@ -287,6 +287,129 @@ RSpec.shared_examples 'a Python3 grammar' do
 		)
 	    ])
 	end
+
+	context 'Function Definition' do
+	    it 'must parse a function definition that returns nothing' do
+		expect(parser.parse("def foo():\n    return")).to eq [
+		Grammars::Python::Statement.new(
+			Grammars::Python::Statement::FunctionDefinition.new(
+			    nil,
+			    "",
+			    "def",
+			    " ",
+			    "foo",
+			    "",
+			    "(",
+			    "",
+			    nil,
+			    "",
+			    ")",
+			    nil,
+			    ":",
+			    "",
+			    Grammars::Python::Block.new(
+				Grammars::Python::Block[1].new(
+				    "\n",
+				    "    ",
+				    [Grammars::Python::Statement.new(
+					Grammars::Python::Statement::Simple.new(
+					    Grammars::Python::SmallStatement.new(
+						Grammars::Python::SmallStatement::Return.new(
+						    'return',
+						    nil
+						)
+					    ),
+					    [],
+					    nil
+					)
+				    )],
+				    ""
+				)
+			    )
+			)
+		    )
+		]
+	    end
+
+	    it 'must parse a function definition that returns an integer literal' do
+		expect(parser.parse("def foo():\n    return 42")).to eq [
+		Grammars::Python::Statement.new(
+			Grammars::Python::Statement::FunctionDefinition.new(
+			    nil,
+			    "",
+			    "def",
+			    " ",
+			    "foo",
+			    "",
+			    "(",
+			    "",
+			    nil,
+			    "",
+			    ")",
+			    nil,
+			    ":",
+			    "",
+			    Grammars::Python::Block.new(
+				Grammars::Python::Block[1].new(
+				    "\n",
+				    "    ",
+				    [Grammars::Python::Statement.new(
+					Grammars::Python::Statement::Simple.new(
+					    Grammars::Python::SmallStatement.new(
+						Grammars::Python::SmallStatement::Return.new(
+						    'return',
+						    Grammars::Python::SmallStatement::Return.last.grammar.new(
+							' ',
+							Grammars::Python::Expressions.new(
+							    Grammars::Python::Expressions::Items.new(
+								Grammars::Python::Expression.new(
+								    Grammars::Python::Expression::BitwiseXor.new(
+									Grammars::Python::BitwiseAnd.new(
+									    Grammars::Python::BitwiseShift.new(
+										Grammars::Python::Sum.new(
+										    Grammars::Python::Term.new(
+											Grammars::Python::Factor.new(
+											    [],
+											    Grammars::Python::Factor[1].new(
+												Grammars::Python::Primary.new(
+												    nil,
+												    Grammars::Python::Atom.new('42'),
+												    []
+												),
+												nil
+											    )
+											),
+											[]
+										    ),
+										    []
+										),
+										[]
+									    ),
+									    []
+									),
+									[]
+								    ),
+								    []
+								)
+							    ),
+							    [],
+							    nil
+							)
+						    )
+						)
+					    ),
+					    [],
+					    nil
+					)
+				    )],
+				    ""
+				)
+			    )
+			)
+		    )
+		]
+	    end
+	end
     end
 end
 

@@ -129,7 +129,12 @@ module Grammars
 		star_expr = concatenation('*', expr)
 
 		# exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
-		exprlist = concatenation((expr|star_expr), concatenation(',', (expr|star_expr)).any, ','.optional)
+		Expressions = concatenation do
+		    element Items: alternation(expr, star_expr)
+		    element concatenation(',', Items).any
+		    element ','.optional
+		end
+		exprlist = Expressions
 
 		# test_nocond: or_test | lambdef_nocond
 		test_nocond = alternation do |test_nocond|
@@ -203,38 +208,36 @@ module Grammars
 		#        '[' [testlist_comp] ']' |
 		#        '{' [dictorsetmaker] '}' |
 		#        NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-		atom = concatenation('(', (yield_expr | testlist_comp).optional, ')') |
+		Atom = concatenation('(', (yield_expr | testlist_comp).optional, ')') |
 		       concatenation('[', testlist_comp.optional, ']') |
 		       concatenation('{', dictorsetmaker.optional, '}') |
 		       NAME | NUMBER | STRING | '...' | 'None' | 'True' | 'False'
 
 		# atom_expr: ['await'] atom trailer*
-		atom_expr = concatenation('await'.optional, atom, trailer.any)
+		Primary = concatenation('await'.optional, Atom, trailer.any)
 
 		# factor: ('+'|'-'|'~') factor | power
 		# power: atom_expr ['**' factor]
 		Factor = concatenation do |factor|
 		    element ('+'|'-'|'~').any
-		    element concatenation(atom_expr, concatenation('**', factor).optional)
+		    element concatenation(Primary, concatenation('**', factor).optional)
 		end
 
 		# term: factor (('*'|'@'|'/'|'%'|'//') factor)*
-		term = concatenation(Factor, concatenation(('*'|'@'|'/'|'%'|'//'), Factor).any)
+		Term = concatenation(Factor, concatenation(('*'|'@'|'/'|'%'|'//'), Factor).any)
 
 		# arith_expr: term (('+'|'-') term)*
-		arith_expr = concatenation(term, concatenation(('+'|'-'), term).any)
+		Sum = concatenation(Term, concatenation(('+'|'-'), Term).any)
 
 		# shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-		shift_expr = concatenation(arith_expr, concatenation(('<<'|'>>'), arith_expr).any)
+		BitwiseShift = concatenation(Sum, concatenation(('<<'|'>>'), Sum).any)
 
 		# and_expr: shift_expr ('&' shift_expr)*
-		and_expr = concatenation(shift_expr, concatenation('&', shift_expr).any)
+		BitwiseAnd = concatenation(BitwiseShift, concatenation('&', BitwiseShift).any)
 
 		# xor_expr: and_expr ('^' and_expr)*
-		xor_expr = concatenation(and_expr, concatenation('^', and_expr).any)
-
-		element xor_expr
-		element concatenation('|', xor_expr).any
+		element BitwiseXor: concatenation(BitwiseAnd, concatenation('^', BitwiseAnd).any)
+		element concatenation('|', BitwiseXor).any
 	    end
 
 	    # @endgroup Expression
@@ -340,7 +343,7 @@ module Grammars
 	#     | assignment
 	#     | expressions
 	SmallStatement = alternation do
-	    element Return: concatenation('return', testlist.optional)			# return_stmt: 'return' [testlist]
+	    element Return: concatenation('return', concatenation(/\s+/, exprlist).optional)	# return_stmt: 'return' [expressions]
 	    element Import: (import_name | import_from)					# import_stmt: import_name | import_from
 	    element Pass: 'pass'							# pass_stmt: 'pass'
 	    element Raise: concatenation('raise', concatenation(Test, concatenation('from', Test).optional).optional)	# raise_stmt: 'raise' [_test ['from' _test]]
@@ -381,9 +384,10 @@ module Grammars
 
 	    # suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 	    suite = Simple | concatenation(NEWLINE, INDENT, stmt.one_or_more, DEDENT)
+	    Block = suite
 
 	    # funcdef: 'def' NAME parameters ['->' test] ':' suite
-	    element FunctionDefinition: concatenation('async'.optional, /\s*/, 'def', /\s*/, NAME, /\s*/, '(', /\s*/, FunctionParameters.optional, /\s*/, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, suite)
+	    element FunctionDefinition: concatenation('async'.optional, /\s*/, 'def', /\s*/, NAME, /\s*/, '(', /\s*/, FunctionParameters.optional, /\s*/, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, Block)
 
 	    # classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 	    classdef = concatenation('class', NAME, concatenation('(', arglist.optional, ')').optional, ':', suite)
