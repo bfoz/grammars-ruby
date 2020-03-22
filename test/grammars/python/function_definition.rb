@@ -3,7 +3,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	expect(parser.parse("def foo():\n    pass")).to eq([
 	    Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
-		    nil, "", "def", " ", "foo", "", "(", "", nil, "", ")", nil, ":", "",
+		    nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
 		    Grammars::Python::Statement::FunctionDefinition.last.new(
 			Grammars::Python::Statement::FunctionDefinition.last[1].new(
 			    "\n",
@@ -29,7 +29,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	expect(parser.parse("def foo(a):\n    pass")).to eq([
 	    Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
-		    nil, "", "def", " ", "foo", "", "(", "",
+		    nil, "def", " ", "foo", "(",
 		    Grammars::Python::FunctionParameters.new(
 			Grammars::Python::FunctionParameter.new(
 			    Grammars::Python::FunctionParameter::PlainName.new('a', nil)
@@ -37,7 +37,6 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 			[],
 			''
 		    ),
-		    "",
 		    ")",
 		    nil,
 		    ":",
@@ -67,7 +66,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	expect(parser.parse("def foo(a, b, *c, **d):\n    pass")).to eq([
 	    Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
-		    nil, "", "def", " ", "foo", "", "(", "",
+		    nil, "def", " ", "foo", "(",
 		    Grammars::Python::FunctionParameters.new(
 			Grammars::Python::FunctionParameter.new(
 			    Grammars::Python::FunctionParameter::PlainName.new('a', nil),
@@ -94,7 +93,6 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 			],
 			''
 		    ),
-		    "",
 		    ")",
 		    nil,
 		    ":",
@@ -124,7 +122,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	expect(parser.parse("def foo():\n    return")).to eq [
 	Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
-		    nil, "", "def", " ", "foo", "", "(", "", nil, "", ")", nil, ":", "",
+		    nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
 		    Grammars::Python::Block.new(
 			Grammars::Python::Block[1].new(
 			    "\n",
@@ -153,7 +151,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	expect(parser.parse("def foo():\n    return 42")).to eq [
 	Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
-		    nil, "", "def", " ", "foo", "", "(", "", nil, "", ")", nil, ":", "",
+		    nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
 		    Grammars::Python::Block.new(
 			Grammars::Python::Block[1].new(
 			    "\n",

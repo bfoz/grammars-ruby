@@ -14,6 +14,8 @@ module Grammars
     module Python
 	using Grammar::DSL
 
+	ignore /\s*/
+
 	DEDENT = //
 	ENDMARKER = ''
 	INDENT = /[\t ]+/
@@ -387,7 +389,7 @@ module Grammars
 	    Block = suite
 
 	    # funcdef: 'def' NAME parameters ['->' test] ':' suite
-	    element FunctionDefinition: concatenation('async'.optional, /\s*/, 'def', /\s*/, NAME, /\s*/, '(', /\s*/, FunctionParameters.optional, /\s*/, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, Block)
+	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, Block)
 
 	    # classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 	    classdef = concatenation('class', NAME, concatenation('(', arglist.optional, ')').optional, ':', suite)
