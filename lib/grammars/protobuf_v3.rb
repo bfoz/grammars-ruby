@@ -4,6 +4,9 @@ module Grammars
     module Protobuf
 	using Grammar::DSL
 
+	# implicit_separator /\s*/
+	ignore /\s*/
+
 	# --- Lexical elements ---
 
 	# Identifiers
@@ -38,16 +41,16 @@ module Grammars
 	HexEscape = /\\[xX][0-9a-fA-F]{2}/
 	OctalEscape = /\\[0-7]{3}/
 	CharacterEscape = /\\[abfnrtv\\'"]/
-	CharValue = HexEscape | OctalEscape | CharacterEscape | /[^\0\n\\]/
-	StringLiteral = concatenation("'", CharValue.any, "'") | concatenation('"', CharValue.any, '"')
+	CharValue1 = HexEscape | OctalEscape | CharacterEscape | /[^\0\n\\']/
+	CharValue2 = HexEscape | OctalEscape | CharacterEscape | /[^\0\n\\"]/
+	StringLiteral = concatenation("'", CharValue1.any, "'") | concatenation('"', CharValue2.any, '"')
 
 	EmptyStatement = ";"
 	Constant = FullIdentifier | concatenation(("-" | "+").optional, IntegerLiteral) | concatenation(("-" | "+").optional, FloatLiteral) | StringLiteral | "true" | "false"
 
 	# Syntax
 	# The syntax statement is used to define the protobuf version.
-	Quote = "'" | '"'
-	Syntax = concatenation("syntax", "=", Quote, "proto3", Quote, ";")
+	Syntax = /syntax\s*=\s*(['"])proto3\1;/
 
 	# Import Statement
 	# The import statement is used to import another .proto's definitions.
