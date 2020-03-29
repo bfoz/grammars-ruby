@@ -18,7 +18,7 @@ module Grammars
 
 	DEDENT = //
 	ENDMARKER = ''
-	INDENT = /[\t ]+/
+	INDENT = /[\t ]*/
 	NAME = /\w+/
 	NEWLINE = /\n/
 
@@ -380,16 +380,22 @@ module Grammars
 	FunctionParameters = concatenation(FunctionParameter, concatenation(/\s*,\s*/, FunctionParameter).any, /(\s*,)?/)
 
 	# stmt: simple_stmt | compound_stmt
-	Statement = alternation do |stmt|
+	Statement = alternation do |statement|
 	    # simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
 	    element Simple: concatenation(SmallStatement, concatenation(';', SmallStatement).any, ';'.optional)
 
+	    # block: NEWLINE INDENT statements DEDENT | simple_stmt
+	    Block = concatenation do
+		element NEWLINE
+		element INDENT
+		element statement.optional
+	    end
+
 	    # suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
-	    suite = Simple | concatenation(NEWLINE, INDENT, stmt.one_or_more, DEDENT)
-	    Block = suite
+	    suite = Simple | Block.at_least(1)
 
 	    # funcdef: 'def' NAME parameters ['->' test] ':' suite
-	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, Block)
+	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, suite)
 
 	    # classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 	    classdef = concatenation('class', NAME, concatenation('(', arglist.optional, ')').optional, ':', suite)
