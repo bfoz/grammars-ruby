@@ -390,9 +390,8 @@ module Grammars
 		element INDENT
 		element statement.optional
 	    end
-
-	    # suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
-	    suite = Simple | Block.at_least(1)
+	    Suite = Simple | Block.at_least(1)
+	    suite = Suite
 
 	    # funcdef: 'def' NAME parameters ['->' test] ':' suite
 	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, suite)
@@ -421,7 +420,7 @@ module Grammars
 	    element With: concatenation('async'.optional, /\s*/, 'with', with_item, concatenation(',', with_item).any,  ':', suite)
 
 	    # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-	    element If: concatenation('if', Test, ':', suite, concatenation('elif', Test, ':', suite).any, concatenation('else', ':', suite).optional)
+	    element If: concatenation('if', Expression, ':', Suite, concatenation('elif', Expression, ':', Suite).any, concatenation('else', ':', Suite).optional)
 
 	    # while_stmt: 'while' test ':' suite ['else' ':' suite]
 	    element While: concatenation('while', Test, ':', suite, concatenation('else', ':', suite).optional)

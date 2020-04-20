@@ -73,7 +73,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 		    nil,
 		    ":",
 		    "",
-		    Grammars::Python::Statement::FunctionDefinition.last.new([
+		    Grammars::Python::Suite.new([
 			Grammars::Python::Block.new(
 			    "\n",
 			    "    ",

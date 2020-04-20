@@ -140,6 +140,59 @@ RSpec.shared_examples 'a Python3 grammar' do
 	    parser.push Grammars::Python::Statement
 	end
 
+	it 'must match a simple if statement' do
+	    expect(parser.parse("if a:\n    pass")).to eq([
+		Grammars::Python::Statement.new(
+		    Grammars::Python::Statement::If.new(
+			'if',
+			Grammars::Python::Expression.new(
+			    Grammars::Python::Expression::BitwiseXor.new(
+				Grammars::Python::BitwiseAnd.new(
+				    Grammars::Python::BitwiseShift.new(
+					Grammars::Python::Sum.new(
+					    Grammars::Python::Term.new(
+						Grammars::Python::Factor.new(
+						    [],
+						    Grammars::Python::Factor.last.new(
+							Grammars::Python::Primary.new(
+							    nil,
+							    Grammars::Python::Atom.new('a'),
+							    []
+							),
+							nil
+						    )
+						),
+						[]
+					    ),
+					    []
+					),
+					[]
+				    ),
+				    []
+				),
+				[]
+			    ),
+			    []
+			),
+			':',
+			Grammars::Python::Suite.new([
+			    Grammars::Python::Block.new(
+				"\n",
+				'    ',
+				Grammars::Python::Statement::Simple.new(
+				    Grammars::Python::SmallStatement.new('pass'),
+				    [],
+				    nil
+				)
+			    )
+			]),
+			[],
+			nil
+		    )
+		)
+	    ])
+	end
+
 	include_examples "Python::FunctionDefinition"
     end
 end
