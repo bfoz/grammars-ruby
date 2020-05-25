@@ -4,10 +4,9 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	    Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
 		    nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
-		    Grammars::Python::Statement::FunctionDefinition.last.new([
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
@@ -32,10 +31,9 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 		    nil,
 		    ":",
 		    "",
-		    Grammars::Python::Statement::FunctionDefinition.last.new([
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
@@ -46,9 +44,8 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 				)
 			    ),
 			),
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
@@ -66,17 +63,16 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
     end
 
     it 'must parse a multi-statement function definition' do
-	expect(parser.parse("def foo():\n    pass\n    \n\n    return")).to eq([
+	expect(parser.parse("def foo():\n    pass\n    \n    return")).to eq([
 	    Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
 		    nil, "def", " ", "foo", "(", nil, ")",
 		    nil,
 		    ":",
 		    "",
-		    Grammars::Python::Suite.new([
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
@@ -87,24 +83,132 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 				)
 			    ),
 			),
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    nil,
 			),
-			Grammars::Python::Block.new(
-			    "\n",
-			    "",
-			    nil,
-			),
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
 					Grammars::Python::SmallStatement::Return.new('return', nil)
 				    ),
+				    [],
+				    nil
+				)
+			    ),
+			)
+		    ])
+		)
+	    )
+	])
+    end
+
+    it 'must parse a function definition that has multiple compound statements' do
+    	expect(parser.parse("def foo():\n    if a:\n        pass\n    if b:\n        pass")).to eq([
+	    Grammars::Python::Statement.new(
+		Grammars::Python::Statement::FunctionDefinition.new(
+		    nil, "def", " ", "foo", "(", nil, ")",
+		    nil,
+		    ":",
+		    "",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
+			    Grammars::Python::Statement.new(
+				Grammars::Python::Statement::If.new(
+				    'if',
+				    Grammars::Python::Expression.new(
+					Grammars::Python::Expression::BitwiseXor.new(
+					    Grammars::Python::BitwiseAnd.new(
+						Grammars::Python::BitwiseShift.new(
+						    Grammars::Python::Sum.new(
+							Grammars::Python::Term.new(
+							    Grammars::Python::Factor.new(
+								[],
+								Grammars::Python::Factor.last.new(
+								    Grammars::Python::Primary.new(
+									nil,
+									Grammars::Python::Atom.new('a'),
+									[]
+								    ),
+								    nil
+								)
+							    ),
+							    []
+							),
+							[]
+						    ),
+						    []
+						),
+						[]
+					    ),
+					    []
+					),
+					[]
+				    ),
+				    ':',
+				    Grammars::Python::Block.new([
+					 Grammars::Python::Block.last.grammar.new(
+					    "\n        ",
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new('pass'),
+						[],
+						nil
+					    )
+					)
+				    ]),
+				    [],
+				    nil
+				)
+			    ),
+			),
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
+			    Grammars::Python::Statement.new(
+				Grammars::Python::Statement::If.new(
+				    'if',
+				    Grammars::Python::Expression.new(
+					Grammars::Python::Expression::BitwiseXor.new(
+					    Grammars::Python::BitwiseAnd.new(
+						Grammars::Python::BitwiseShift.new(
+						    Grammars::Python::Sum.new(
+							Grammars::Python::Term.new(
+							    Grammars::Python::Factor.new(
+								[],
+								Grammars::Python::Factor.last.new(
+								    Grammars::Python::Primary.new(
+									nil,
+									Grammars::Python::Atom.new('b'),
+									[]
+								    ),
+								    nil
+								)
+							    ),
+							    []
+							),
+							[]
+						    ),
+						    []
+						),
+						[]
+					    ),
+					    []
+					),
+					[]
+				    ),
+				    ':',
+				    Grammars::Python::Block.new([
+					 Grammars::Python::Block.last.grammar.new(
+					    "\n        ",
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new('pass'),
+						[],
+						nil
+					    )
+					)
+				    ]),
 				    [],
 				    nil
 				)
@@ -132,10 +236,9 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 		    nil,
 		    ":",
 		    "",
-		    Grammars::Python::Statement::FunctionDefinition.last.new([
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
@@ -187,10 +290,9 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 		    nil,
 		    ":",
 		    "",
-		    Grammars::Python::Statement::FunctionDefinition.last.new([
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
@@ -212,10 +314,9 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
 		    nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
-		    Grammars::Python::Statement::FunctionDefinition.last.new([
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(
@@ -240,10 +341,9 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 	Grammars::Python::Statement.new(
 		Grammars::Python::Statement::FunctionDefinition.new(
 		    nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
-		    Grammars::Python::Statement::FunctionDefinition.last.new([
-			Grammars::Python::Block.new(
-			    "\n",
-			    "    ",
+		    Grammars::Python::Block.new([
+			Grammars::Python::Block.last.grammar.new(
+			    "\n    ",
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new(

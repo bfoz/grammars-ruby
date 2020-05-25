@@ -345,7 +345,7 @@ module Grammars
 	#     | assignment
 	#     | expressions
 	SmallStatement = alternation do
-	    element Return: concatenation('return', concatenation(/\s+/, exprlist).optional)	# return_stmt: 'return' [expressions]
+	    element Return: concatenation('return', concatenation(/[[:blank:]]+/, Expressions).optional)	# return_stmt: 'return' [expressions]
 	    element Import: (import_name | import_from)					# import_stmt: import_name | import_from
 	    element Pass: 'pass'							# pass_stmt: 'pass'
 	    element Raise: concatenation('raise', concatenation(Test, concatenation('from', Test).optional).optional)	# raise_stmt: 'raise' [_test ['from' _test]]
@@ -385,19 +385,19 @@ module Grammars
 	    element Simple: concatenation(SmallStatement, concatenation(';', SmallStatement).any, ';'.optional)
 
 	    # block: NEWLINE INDENT statements DEDENT | simple_stmt
-	    Block = concatenation do
-		element NEWLINE
-		element INDENT
-		element statement.optional
+	    Block = alternation do
+		# All of the leading-whitespace in a Block must be the same
+		latch(:indent) { /\n[\t ]*/ }
+
+		element Simple
+		element concatenation(indent, statement.optional).at_least(1)
 	    end
-	    Suite = Simple | Block.at_least(1)
-	    suite = Suite
 
-	    # funcdef: 'def' NAME parameters ['->' test] ':' suite
-	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, suite)
+	    # funcdef: 'def' NAME parameters ['->' test] ':' block
+	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, Block)
 
-	    # classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
-	    classdef = concatenation('class', NAME, concatenation('(', arglist.optional, ')').optional, ':', suite)
+	    # classdef: 'class' NAME ['(' [arglist] ')'] ':' block
+	    classdef = concatenation('class', NAME, concatenation('(', arglist.optional, ')').optional, ':', Block)
 
 	    # decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
 	    decorator = concatenation('@', dotted_name, concatenation('(', arglist.optional, ')'), NEWLINE)
@@ -410,35 +410,35 @@ module Grammars
 
 	    # @group Compound Statements
 
-	    # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
-	    element For: concatenation('async'.optional, /\s*/, 'for', exprlist, 'in', testlist, ':', suite, concatenation('else', ':', suite).optional)
+	    # for_stmt: 'for' exprlist 'in' testlist ':' block ['else' ':' block]
+	    element For: concatenation('async'.optional, /\s*/, 'for', exprlist, 'in', testlist, ':', Block, concatenation('else', ':', Block).optional)
 
 	    # with_item: test ['as' expr]
 	    with_item = concatenation(Test, concatenation('as', Expression).optional)
 
-	    # with_stmt: 'with' with_item (',' with_item)*  ':' suite
-	    element With: concatenation('async'.optional, /\s*/, 'with', with_item, concatenation(',', with_item).any,  ':', suite)
+	    # with_stmt: 'with' with_item (',' with_item)*  ':' block
+	    element With: concatenation('async'.optional, /\s*/, 'with', with_item, concatenation(',', with_item).any,  ':', Block)
 
-	    # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-	    element If: concatenation('if', Expression, ':', Suite, concatenation('elif', Expression, ':', Suite).any, concatenation('else', ':', Suite).optional)
+	    # if_stmt: 'if' test ':' block ('elif' test ':' block)* ['else' ':' block]
+	    element If: concatenation('if', Expression, ':', Block, concatenation('elif', Expression, ':', Block).any, concatenation('else', ':', Block).optional)
 
-	    # while_stmt: 'while' test ':' suite ['else' ':' suite]
-	    element While: concatenation('while', Test, ':', suite, concatenation('else', ':', suite).optional)
+	    # while_stmt: 'while' test ':' block ['else' ':' block]
+	    element While: concatenation('while', Test, ':', Block, concatenation('else', ':', Block).optional)
 
-	    # try_stmt: ('try' ':' suite
-	    # 	   ((except_clause ':' suite)+
-	    # 	    ['else' ':' suite]
-	    # 	    ['finally' ':' suite] |
-	    # 	   'finally' ':' suite))
+	    # try_stmt: ('try' ':' block
+	    # 	   ((except_clause ':' block)+
+	    # 	    ['else' ':' block]
+	    # 	    ['finally' ':' block] |
+	    # 	   'finally' ':' block))
 	    try_stmt = concatenation(
-		'try', ':', suite,
+		'try', ':', Block,
 		alternation(
 		    concatenation(
-			concatenation(except_clause, ':', suite).one_or_more,
-			concatenation('else', ':', suite).optional,
-			concatenation('finally', ':', suite).optional
+			concatenation(except_clause, ':', Block).one_or_more,
+			concatenation('else', ':', Block).optional,
+			concatenation('finally', ':', Block).optional
 		    ),
-		    concatenation('finally', ':', suite)
+		    concatenation('finally', ':', Block)
 		)
 	    )
 

@@ -175,10 +175,9 @@ RSpec.shared_examples 'a Python3 grammar' do
 			    []
 			),
 			':',
-			Grammars::Python::Suite.new([
-			    Grammars::Python::Block.new(
-				"\n",
-				'    ',
+			Grammars::Python::Block.new([
+			    Grammars::Python::Block.last.grammar.new(
+				"\n    ",
 				Grammars::Python::Statement::Simple.new(
 				    Grammars::Python::SmallStatement.new('pass'),
 				    [],
@@ -194,6 +193,242 @@ RSpec.shared_examples 'a Python3 grammar' do
 	end
 
 	include_examples "Python::FunctionDefinition"
+    end
+
+    context 'Statements' do
+	before :each do
+	    parser.push Grammars::Python::Statements
+	end
+
+	it 'must match multiple If statements' do
+	    expect(parser.parse("if a:\n    pass\nif b:\n    pass")).to eq([
+		[
+		    Grammars::Python::Statements.grammar.new(
+			Grammars::Python::Statement.new(
+			    Grammars::Python::Statement::If.new(
+				'if',
+				Grammars::Python::Expression.new(
+				    Grammars::Python::Expression::BitwiseXor.new(
+					Grammars::Python::BitwiseAnd.new(
+					    Grammars::Python::BitwiseShift.new(
+						Grammars::Python::Sum.new(
+						    Grammars::Python::Term.new(
+							Grammars::Python::Factor.new(
+							    [],
+							    Grammars::Python::Factor.last.new(
+								Grammars::Python::Primary.new(
+								    nil,
+								    Grammars::Python::Atom.new('a'),
+								    []
+								),
+								nil
+							    )
+							),
+							[]
+						    ),
+						    []
+						),
+						[]
+					    ),
+					    []
+					),
+					[]
+				    ),
+				    []
+				),
+				':',
+				Grammars::Python::Block.new([
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new('pass'),
+						[],
+						nil
+					    )
+					)
+				    )
+				]),
+				[],
+				nil
+			    )
+			)
+		    ),
+		    Grammars::Python::Statements.grammar.new("\n"),
+		    Grammars::Python::Statements.grammar.new(
+			Grammars::Python::Statement.new(
+			    Grammars::Python::Statement::If.new(
+				'if',
+				Grammars::Python::Expression.new(
+				    Grammars::Python::Expression::BitwiseXor.new(
+					Grammars::Python::BitwiseAnd.new(
+					    Grammars::Python::BitwiseShift.new(
+						Grammars::Python::Sum.new(
+						    Grammars::Python::Term.new(
+							Grammars::Python::Factor.new(
+							    [],
+							    Grammars::Python::Factor.last.new(
+								Grammars::Python::Primary.new(
+								    nil,
+								    Grammars::Python::Atom.new('b'),
+								    []
+								),
+								nil
+							    )
+							),
+							[]
+						    ),
+						    []
+						),
+						[]
+					    ),
+					    []
+					),
+					[]
+				    ),
+				    []
+				),
+				':',
+				Grammars::Python::Block.new([
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new('pass'),
+						[],
+						nil
+					    )
+					)
+				    )
+				]),
+				[],
+				nil
+			    )
+			)
+		    )
+		]
+	    ])
+	end
+
+	it 'must parse multiple simple function definitions' do
+	    expect(parser.parse("def foo():\n    pass\ndef bar():\n    pass\n")).to eq([
+		[
+		    Grammars::Python::Statements.grammar.new(
+			Grammars::Python::Statement.new(
+			    Grammars::Python::Statement::FunctionDefinition.new(
+				nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
+				Grammars::Python::Block.new([
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new('pass'),
+						[],
+						nil
+					    )
+					)
+				    )
+				]),
+			    )
+			)
+		    ),
+		    Grammars::Python::Statements.grammar.new(
+			Grammars::Python::Statement.new(
+			    Grammars::Python::Statement::FunctionDefinition.new(
+				nil, "def", " ", "bar", "(", nil, ")", nil, ":", "",
+				Grammars::Python::Block.new([
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new('pass'),
+						[],
+						nil
+					    )
+					)
+				    )
+				]),
+			    )
+			)
+		    ),
+		    Grammars::Python::Statements.grammar.new("\n"),
+		]
+	    ])
+	end
+
+	it 'must parse multiple multi-statement function definitions' do
+	    expect(parser.parse("def foo():\n    pass\n    return\ndef bar():\n    pass\n    return\n")).to eq([
+		[
+		    Grammars::Python::Statements.grammar.new(
+			Grammars::Python::Statement.new(
+			    Grammars::Python::Statement::FunctionDefinition.new(
+				nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
+				Grammars::Python::Block.new([
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new(
+						    Grammars::Python::SmallStatement::Pass
+						),
+						[],
+						nil
+					    )
+					)
+				    ),
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new(
+						    Grammars::Python::SmallStatement::Return.new('return', nil)
+						),
+						[],
+						nil
+					    )
+					)
+				    )
+				])
+			    )
+			)
+		    ),
+		    Grammars::Python::Statements.grammar.new(
+			Grammars::Python::Statement.new(
+			    Grammars::Python::Statement::FunctionDefinition.new(
+				nil, "def", " ", "bar", "(", nil, ")", nil, ":", "",
+				Grammars::Python::Block.new([
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new(
+						    Grammars::Python::SmallStatement::Pass
+						),
+						[],
+						nil
+					    )
+					)
+				    ),
+				    Grammars::Python::Block.last.grammar.new(
+					"\n    ",
+					Grammars::Python::Statement.new(
+					    Grammars::Python::Statement::Simple.new(
+						Grammars::Python::SmallStatement.new(
+						    Grammars::Python::SmallStatement::Return.new('return', nil)
+						),
+						[],
+						nil
+					    )
+					)
+				    )
+				])
+			    )
+			)
+		    ),
+		    Grammars::Python::Statements.grammar.new("\n"),
+		]
+	    ])
+	end
     end
 end
 
