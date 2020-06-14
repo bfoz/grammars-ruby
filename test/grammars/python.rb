@@ -150,6 +150,41 @@ RSpec.shared_examples 'a Python3 grammar' do
 	    parser.push Grammars::Python::Statements
 	end
 
+	it 'must parse multiple simple unindented statements' do
+	    expect(parser.parse("pass\npass\n")).to eq([[
+		Grammars::Python::Statements.grammar.new(
+		    Grammars::Python::Statement.new(
+			Grammars::Python::Statement::Simple.new(Grammars::Python::SmallStatement.new('pass'), [], nil),
+		    )
+		),
+		Grammars::Python::Statements.grammar.new("\n"),
+		Grammars::Python::Statements.grammar.new(
+		    Grammars::Python::Statement.new(
+			Grammars::Python::Statement::Simple.new(Grammars::Python::SmallStatement.new('pass'), [], nil),
+		    )
+		),
+		Grammars::Python::Statements.grammar.new("\n"),
+	    ]])
+	end
+
+	it 'must parse multiple simple unindented statements with blank lines' do
+	    expect(parser.parse("pass\n\npass\n")).to eq([[
+		Grammars::Python::Statements.grammar.new(
+		    Grammars::Python::Statement.new(
+			Grammars::Python::Statement::Simple.new(Grammars::Python::SmallStatement.new('pass'), [], nil),
+		    )
+		),
+		Grammars::Python::Statements.grammar.new("\n"),
+		Grammars::Python::Statements.grammar.new("\n"),
+		Grammars::Python::Statements.grammar.new(
+		    Grammars::Python::Statement.new(
+			Grammars::Python::Statement::Simple.new(Grammars::Python::SmallStatement.new('pass'), [], nil),
+		    )
+		),
+		Grammars::Python::Statements.grammar.new("\n"),
+	    ]])
+	end
+
 	it 'must match multiple If statements' do
 	    expect(parser.parse("if a:\n    pass\nif b:\n    pass")).to eq([
 		[
