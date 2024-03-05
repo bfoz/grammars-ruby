@@ -14,11 +14,11 @@ module Grammars
     module Python
 	using Grammar::DSL
 
-	ignore /\s*/
+	ignore /[[:blank:]]+/
 
 	DEDENT = //
 	ENDMARKER = ''
-	INDENT = /[\t ]*/
+	INDENT = /[\t ]+/
 	NAME = /\w+/
 	NEWLINE = /\n/
 
@@ -391,11 +391,11 @@ module Grammars
 		latch(:indent) { /\n[\t ]*/ }
 
 		element Simple
-		element concatenation(indent, statement.optional).at_least(1)
+		element concatenation(indent, statement).at_least(1)
 	    end
 
 	    # funcdef: 'def' NAME parameters ['->' test] ':' block
-	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', /[[:blank:]]*/, Block)
+	    element FunctionDefinition: concatenation('async'.optional, 'def', /\s+/, NAME, '(', FunctionParameters.optional, ')', concatenation('->', Test).optional, ':', Block)
 
 	    # classdef: 'class' NAME ['(' [arglist] ')'] ':' block
 	    classdef = concatenation('class', NAME, concatenation('(', arglist.optional, ')').optional, ':', Block)

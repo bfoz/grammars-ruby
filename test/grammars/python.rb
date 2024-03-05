@@ -118,7 +118,7 @@ RSpec.shared_examples 'a Python3 grammar' do
 		    Grammars::Python::Statements.grammar.new(
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::FunctionDefinition.new(
-				nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
+				nil, "def", " ", "foo", "(", nil, ")", nil, ":",
 				Grammars::Python::Block.new([
 				    Grammars::Python::Block.last.grammar.new(
 					"\n    ",
@@ -134,10 +134,11 @@ RSpec.shared_examples 'a Python3 grammar' do
 			    )
 			)
 		    ),
+		    "\n",
 		    Grammars::Python::Statements.grammar.new(
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::FunctionDefinition.new(
-				nil, "def", " ", "bar", "(", nil, ")", nil, ":", "",
+				nil, "def", " ", "bar", "(", nil, ")", nil, ":",
 				Grammars::Python::Block.new([
 				    Grammars::Python::Block.last.grammar.new(
 					"\n    ",
@@ -164,7 +165,7 @@ RSpec.shared_examples 'a Python3 grammar' do
 		    Grammars::Python::Statements.grammar.new(
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::FunctionDefinition.new(
-				nil, "def", " ", "foo", "(", nil, ")", nil, ":", "",
+				nil, "def", " ", "foo", "(", nil, ")", nil, ":",
 				Grammars::Python::Block.new([
 				    Grammars::Python::Block.last.grammar.new(
 					"\n    ",
@@ -194,10 +195,11 @@ RSpec.shared_examples 'a Python3 grammar' do
 			    )
 			)
 		    ),
+		    "\n",
 		    Grammars::Python::Statements.grammar.new(
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::FunctionDefinition.new(
-				nil, "def", " ", "bar", "(", nil, ")", nil, ":", "",
+				nil, "def", " ", "bar", "(", nil, ")", nil, ":",
 				Grammars::Python::Block.new([
 				    Grammars::Python::Block.last.grammar.new(
 					"\n    ",
