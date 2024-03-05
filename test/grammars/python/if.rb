@@ -4,35 +4,7 @@ RSpec.shared_examples 'Python::Statement::If' do
 	    Grammars::Python::Statement.new(
 		Grammars::Python::Statement::If.new(
 		    'if',
-		    Grammars::Python::Expression.new(
-			Grammars::Python::Expression::BitwiseXor.new(
-			    Grammars::Python::BitwiseAnd.new(
-				Grammars::Python::BitwiseShift.new(
-				    Grammars::Python::Sum.new(
-					Grammars::Python::Term.new(
-					    Grammars::Python::Factor.new(
-						[],
-						Grammars::Python::Factor.last.new(
-						    Grammars::Python::Primary.new(
-							nil,
-							Grammars::Python::Atom.new('a'),
-							[]
-						    ),
-						    nil
-						)
-					    ),
-					    []
-					),
-					[]
-				    ),
-				    []
-				),
-				[]
-			    ),
-			    []
-			),
-			[]
-		    ),
+		    'a',
 		    ':',
 		    Grammars::Python::Block.new([
 			Grammars::Python::Block.last.grammar.new(
@@ -56,35 +28,7 @@ RSpec.shared_examples 'Python::Statement::If' do
 	    Grammars::Python::Statement.new(
 		Grammars::Python::Statement::If.new(
 		    'if',
-		    Grammars::Python::Expression.new(
-			Grammars::Python::Expression::BitwiseXor.new(
-			    Grammars::Python::BitwiseAnd.new(
-				Grammars::Python::BitwiseShift.new(
-				    Grammars::Python::Sum.new(
-					Grammars::Python::Term.new(
-					    Grammars::Python::Factor.new(
-						[],
-						Grammars::Python::Factor.last.new(
-						    Grammars::Python::Primary.new(
-							nil,
-							Grammars::Python::Atom.new('a'),
-							[]
-						    ),
-						    nil
-						)
-					    ),
-					    []
-					),
-					[]
-				    ),
-				    []
-				),
-				[]
-			    ),
-			    []
-			),
-			[]
-		    ),
+		    'a',
 		    ':',
 		    Grammars::Python::Block.new([
 			Grammars::Python::Block.last.grammar.new(
@@ -101,35 +45,7 @@ RSpec.shared_examples 'Python::Statement::If' do
 
 				Grammars::Python::Statement::If.new(
 				    'if',
-				    Grammars::Python::Expression.new(
-					Grammars::Python::Expression::BitwiseXor.new(
-					    Grammars::Python::BitwiseAnd.new(
-						Grammars::Python::BitwiseShift.new(
-						    Grammars::Python::Sum.new(
-							Grammars::Python::Term.new(
-							    Grammars::Python::Factor.new(
-								[],
-								Grammars::Python::Factor.last.new(
-								    Grammars::Python::Primary.new(
-									nil,
-									Grammars::Python::Atom.new('b'),
-									[]
-								    ),
-								    nil
-								)
-							    ),
-							    []
-							),
-							[]
-						    ),
-						    []
-						),
-						[]
-					    ),
-					    []
-					),
-					[]
-				    ),
+				    'b',
 				    ':',
 				    Grammars::Python::Block.new([
 					Grammars::Python::Block.last.grammar.new(

@@ -9,28 +9,6 @@ RSpec.shared_examples 'a Python3 grammar' do
 	include_examples "Python::Expression"
     end
 
-    def arith_expr_number(number)
-	Grammars::Python::Expression[0][0][0].first.new(							# arith_expr
-	    Grammars::Python::Expression[0][0][0].first.first.new(						# term
-		    Grammars::Python::Factor.new(								# factor
-		    	[],
-			Grammars::Python::Expression[0][0][0][0][0][0][1].new(					# power
-			    Grammars::Python::Expression[0][0][0][0][0][0][1][0].new( 				# atom_expr
-				nil,
-				Grammars::Python::Expression[0][0][0][0][0][0][1][0][1].new(			# atom
-				    number.to_s									# NUMBER
-				),
-				[]
-			    ),
-			    nil
-			)
-		    ),
-		    []
-	    ),
-	    []
-	)
-    end
-
     context 'Statement' do
 	before :each do
 	    parser.push Grammars::Python::Statement
@@ -87,35 +65,7 @@ RSpec.shared_examples 'a Python3 grammar' do
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::If.new(
 				'if',
-				Grammars::Python::Expression.new(
-				    Grammars::Python::Expression::BitwiseXor.new(
-					Grammars::Python::BitwiseAnd.new(
-					    Grammars::Python::BitwiseShift.new(
-						Grammars::Python::Sum.new(
-						    Grammars::Python::Term.new(
-							Grammars::Python::Factor.new(
-							    [],
-							    Grammars::Python::Factor.last.new(
-								Grammars::Python::Primary.new(
-								    nil,
-								    Grammars::Python::Atom.new('a'),
-								    []
-								),
-								nil
-							    )
-							),
-							[]
-						    ),
-						    []
-						),
-						[]
-					    ),
-					    []
-					),
-					[]
-				    ),
-				    []
-				),
+				'a',
 				':',
 				Grammars::Python::Block.new([
 				    Grammars::Python::Block.last.grammar.new(
@@ -139,35 +89,7 @@ RSpec.shared_examples 'a Python3 grammar' do
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::If.new(
 				'if',
-				Grammars::Python::Expression.new(
-				    Grammars::Python::Expression::BitwiseXor.new(
-					Grammars::Python::BitwiseAnd.new(
-					    Grammars::Python::BitwiseShift.new(
-						Grammars::Python::Sum.new(
-						    Grammars::Python::Term.new(
-							Grammars::Python::Factor.new(
-							    [],
-							    Grammars::Python::Factor.last.new(
-								Grammars::Python::Primary.new(
-								    nil,
-								    Grammars::Python::Atom.new('b'),
-								    []
-								),
-								nil
-							    )
-							),
-							[]
-						    ),
-						    []
-						),
-						[]
-					    ),
-					    []
-					),
-					[]
-				    ),
-				    []
-				),
+				'b',
 				':',
 				Grammars::Python::Block.new([
 				    Grammars::Python::Block.last.grammar.new(

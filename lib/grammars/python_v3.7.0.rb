@@ -28,7 +28,7 @@ module Grammars
 	OCTAL_NUMBER = /0[oO][0-7_]+/
 	NUMBER = BINARY_NUMBER | DECIMAL_NUMBER | HEXADECIMAL_NUMBER | OCTAL_NUMBER
 
-	STRING = /\w+/
+	DoubleQuotedString = /"(?:(?!").)*"/
 
 	# @group Expression
 
@@ -107,7 +107,7 @@ module Grammars
 
 	    # expr: xor_expr ('|' xor_expr)*
 	    or_test = nil
-	    Expression = concatenation do |expr|
+	    Expression = alternation do |expr|
 
 		# <> isn't actually a valid comparison operator in Python. It's here for the
 		# sake of a __future__ import described in PEP 401 (which really works :-)
@@ -210,36 +210,37 @@ module Grammars
 		#        '[' [testlist_comp] ']' |
 		#        '{' [dictorsetmaker] '}' |
 		#        NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-		Atom = concatenation('(', (yield_expr | testlist_comp).optional, ')') |
+		element Atom: concatenation('(', (yield_expr | testlist_comp).optional, ')') |
 		       concatenation('[', testlist_comp.optional, ']') |
 		       concatenation('{', dictorsetmaker.optional, '}') |
-		       NAME | NUMBER | STRING | '...' | 'None' | 'True' | 'False'
+		       NAME | NUMBER | DoubleQuotedString | '...' | 'None' | 'True' | 'False'
 
 		# atom_expr: ['await'] atom trailer*
-		Primary = concatenation('await'.optional, Atom, trailer.any)
+		element Primary: concatenation('await'.optional, Atom, trailer.any)
 
 		# factor: ('+'|'-'|'~') factor | power
 		# power: atom_expr ['**' factor]
-		Factor = concatenation do |factor|
+		element Factor: concatenation {|factor|
 		    element ('+'|'-'|'~').any
 		    element concatenation(Primary, concatenation('**', factor).optional)
-		end
+		}
 
 		# term: factor (('*'|'@'|'/'|'%'|'//') factor)*
-		Term = concatenation(Factor, concatenation(('*'|'@'|'/'|'%'|'//'), Factor).any)
+		element Term: concatenation(Factor, concatenation(('*'|'@'|'/'|'%'|'//'), Factor).any)
 
 		# arith_expr: term (('+'|'-') term)*
-		Sum = concatenation(Term, concatenation(('+'|'-'), Term).any)
+		element Sum: concatenation(Term, concatenation(('+'|'-'), Term).any)
 
 		# shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-		BitwiseShift = concatenation(Sum, concatenation(('<<'|'>>'), Sum).any)
+		element BitwiseShift: concatenation(Sum, concatenation(('<<'|'>>'), Sum).any)
 
 		# and_expr: shift_expr ('&' shift_expr)*
-		BitwiseAnd = concatenation(BitwiseShift, concatenation('&', BitwiseShift).any)
+		element BitwiseAnd: concatenation(BitwiseShift, concatenation('&', BitwiseShift).any)
 
 		# xor_expr: and_expr ('^' and_expr)*
 		element BitwiseXor: concatenation(BitwiseAnd, concatenation('^', BitwiseAnd).any)
-		element concatenation('|', BitwiseXor).any
+
+		element BitwiseOr: concatenation(BitwiseXor, concatenation('|', BitwiseXor).any)
 	    end
 
 	    # @endgroup Expression
