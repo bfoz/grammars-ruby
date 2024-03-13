@@ -116,6 +116,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::If.new(
 				    'if',
+				    ' ',
 				    'a',
 				    ':',
 				    Grammars::Python::Block.new([
@@ -138,6 +139,7 @@ RSpec.shared_examples 'Python::FunctionDefinition' do
 			    Grammars::Python::Statement.new(
 				Grammars::Python::Statement::If.new(
 				    'if',
+				    ' ',
 				    'b',
 				    ':',
 				    Grammars::Python::Block.new([

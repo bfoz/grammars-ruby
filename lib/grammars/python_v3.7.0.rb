@@ -412,7 +412,17 @@ module Grammars
 	    # @group Compound Statements
 
 	    # for_stmt: 'for' exprlist 'in' testlist ':' block ['else' ':' block]
-	    element For: concatenation('async'.optional, /\s*/, 'for', exprlist, 'in', testlist, ':', Block, concatenation('else', ':', Block).optional)
+	    element For: concatenation(
+		'async'.optional,
+		/[[:blank:]]+/,		# Required whitespace. Don't rely on 'ignore' for this
+		'for',
+		exprlist,
+		'in',
+		testlist,
+		':',
+		Block,
+		concatenation('else', ':', Block).optional
+	    )
 
 	    # with_item: test ['as' expr]
 	    with_item = concatenation(Test, concatenation('as', Expression).optional)
@@ -421,7 +431,19 @@ module Grammars
 	    element With: concatenation('async'.optional, /\s*/, 'with', with_item, concatenation(',', with_item).any,  ':', Block)
 
 	    # if_stmt: 'if' test ':' block ('elif' test ':' block)* ['else' ':' block]
-	    element If: concatenation('if', Expression, ':', Block, concatenation('elif', Expression, ':', Block).any, concatenation('else', ':', Block).optional)
+	    element If: concatenation(
+		'if',
+		/[[:blank:]]+/,		# Required whitespace. Don't rely on 'ignore' for this
+		Expression, ':',
+		Block,
+		concatenation(
+		    'elif',
+		    /[[:blank:]]+/,	# Required whitespace. Don't rely on 'ignore' for this
+		    Expression, ':',
+		    Block
+		).any,
+		concatenation('else', ':', Block).optional
+	    )
 
 	    # while_stmt: 'while' test ':' block ['else' ':' block]
 	    element While: concatenation('while', Test, ':', Block, concatenation('else', ':', Block).optional)

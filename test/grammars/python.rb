@@ -64,7 +64,7 @@ RSpec.shared_examples 'a Python3 grammar' do
 		    Grammars::Python::Statements.grammar.new(
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::If.new(
-				'if',
+				'if', ' ',
 				'a',
 				':',
 				Grammars::Python::Block.new([
@@ -88,7 +88,7 @@ RSpec.shared_examples 'a Python3 grammar' do
 		    Grammars::Python::Statements.grammar.new(
 			Grammars::Python::Statement.new(
 			    Grammars::Python::Statement::If.new(
-				'if',
+				'if', ' ',
 				'b',
 				':',
 				Grammars::Python::Block.new([
